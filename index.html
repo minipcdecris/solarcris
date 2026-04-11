@@ -5,10 +5,7 @@
 <meta name="viewport" content="width=device-width, initial-scale=1">
 <meta name="apple-mobile-web-app-capable" content="yes">
 <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
-<meta name="apple-mobile-web-app-title" content="SolarCRIS">
-<link rel="apple-touch-icon" sizes="180x180" href="icon.png">
-<link rel="icon" href="icon.png">
-    
+
 <title>SolarCRIS - Instalación Colectiva La Viña 2</title>
 
 <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
@@ -383,7 +380,9 @@ canvas{
     background:linear-gradient(135deg,#020617,#0f172a,#1e293b);
 }
 
-
+.picoTexto{
+    font-size:14px;
+}
 
 /* CANVAS GENERAL */
 canvas{
@@ -701,13 +700,26 @@ options:{
 }
 });
 
-    // 🔥 pico real
+// 🔥 pico real + tu producción en tiempo real
 let picoEl = document.getElementById("picoHora");
 
 if(picoEl){
 
-picoEl.innerHTML = "⭐ Pico Mas Alto de Hoy: " + labels[indicePico];
+    let coef = 1.27 / 100;
 
+    let tuPotenciaKW = (potenciaActual * coef) / 1000;
+    let tuPotenciaW = potenciaActual * coef;
+
+picoEl.innerHTML = `
+<span class="picoTexto">
+⭐ Pico Mas Alto de Hoy: <b>${labels[indicePico]}</b>
+<br>⚡ Ahora Estas Obteniendo: 
+<b>${tuPotenciaKW.toFixed(2)} kW</b> 
+<span style="color:#facc15; font-weight:bold;">
+(${Math.round(tuPotenciaW)} Watios)
+</span>
+</span>
+`;
 }
 
 } // 🔥 cierre de graficaPotenciaReal
