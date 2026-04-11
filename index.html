@@ -1,0 +1,1374 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<meta name="apple-mobile-web-app-capable" content="yes">
+<meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
+
+<title>SolarCRIS - Instalación Colectiva La Viña 2</title>
+
+<script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+<script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js"></script>
+<script src="https://cdn.jsdelivr.net/npm/chartjs-plugin-datalabels"></script>
+<style>
+body{
+    font-family:system-ui;
+    background:#0b1220;
+    color:white;
+    margin:0;
+}
+
+/* 🔥 CONTENEDOR */
+.container{
+    max-width:420px;
+    margin:auto;
+    padding:10px;
+        /* 🔥 SOLUCIÓN IPHONE */
+    padding-top: calc(env(safe-area-inset-top) + 10px);
+}
+
+body{
+    padding-top: env(safe-area-inset-top);
+}
+
+.header{
+    text-align:center;
+    font-size:22px;
+    margin-bottom:10px;
+}
+
+/* 🔥 GRID */
+.grid{
+    display:flex;
+    gap:10px;
+    overflow-x:auto;
+    flex-wrap:nowrap;
+    justify-content:center;
+    
+
+}
+
+.cardCenter{
+    flex:0 0 auto;
+}
+
+/* 🔥 CARDS GENERALES */
+.card{
+    background:#1e293b;
+    border-radius:16px;
+    padding:10px;
+    margin-bottom:10px;
+}
+
+/* 🔥 TODAS LAS CARDS REDONDAS IGUAL TAMAÑO QUE GAUGE */
+.cardCenter{
+    display:flex;
+    align-items:center;
+    justify-content:center;
+    text-align:center;
+
+    aspect-ratio:1 / 1;
+    width:80%;
+    max-width:90px;
+
+    border-radius:50%;
+    position:relative;
+    overflow:hidden;
+    margin-top:12px;   /* 🔥 ajusta aquí */
+
+}
+
+/* 🔥 CENTRO INTERIOR (TODAS IGUALES) */
+.cardCenter{
+    position:relative;
+}
+
+.cardCenter::after{
+    content:"";
+    position:absolute;
+
+    width:90%;
+    height:90%;
+
+    background:#020617;
+    border-radius:50%;
+}
+
+.cardCenter{
+    box-shadow:0 0 20px rgba(34,197,94,0.2);
+}
+
+.valorGrande{
+font-size:clamp(10px, 4vw, 10px);
+}
+
+.subTexto{
+    font-size:11px;   /* antes 13px */
+    color:#ffffff;  /* blanco */
+    margin-top:2px;
+}
+
+.subMini{
+    font-size:9px;    /* antes 11px */
+    color:#eab308;  /* amarillo */
+    margin-top:1px;
+}
+
+/* 🔥 CONTENIDO */
+.centerContent{
+    position:relative;
+    z-index:2;
+
+    display:flex;
+    flex-direction:column;
+    align-items:center;
+    justify-content:center;
+}
+
+/* 🔥 TEXTOS */
+.valorGrande{
+    font-size:28px;
+    font-weight:bold;
+}
+
+.subTexto{
+    font-size:13px;
+    color:#94a3b8;
+    margin-top:4px;
+}
+
+.subMini{
+    font-size:11px;
+    color:#64748b;
+    margin-top:2px;
+}
+
+.title{
+    font-size:15px;
+    color:#ffffff;
+}
+
+.big{
+    font-size:24px;
+    font-weight:bold;
+}
+
+/* 🔥 WEATHER */
+.card.weatherCard{
+    background:linear-gradient(135deg,#1e293b,#334155);
+    border-radius:12px;
+    padding:6px 10px;
+    border:1px solid rgba(255,255,255,0.08);
+    box-shadow:0 6px 25px rgba(0,0,0,0.4);
+}
+
+.weatherContainer{
+    display:flex;
+    justify-content:space-between;
+    align-items:center;
+}
+
+.weatherTop{
+    display:flex;
+    align-items:center;
+    gap:12px;
+}
+
+
+
+
+/* 🔥 BLOQUES */
+.prediccionBox,
+.consumoBox{
+    margin-top:1px;
+    padding-top:8px;
+    border-top:1px solid rgba(255,255,255,0.08);
+}
+
+.consumoBox .title{
+    margin-bottom:10px;
+    border-bottom:1px solid rgba(255,255,255,0.05);
+    padding-bottom:4px;
+}
+
+.consumoTexto{
+    font-size:12px;
+    line-height:1.2;
+}
+
+.predMain{
+    font-size:16px;
+}
+
+.predSub{
+    font-size:11px;
+    margin-top:2px;
+}
+
+.cardCenter .valorGrande{
+    font-size:20px;
+    
+}
+
+.topBar{
+    display:flex;
+    justify-content:space-between;
+    align-items:center;
+
+    font-size:12px;
+    color:#94a3b8;
+
+    margin-bottom:6px;
+}
+
+/* 🔥 GRAFICA */
+#graficaHoras{
+    width:100%;
+    height:140px !important;
+    margin-top:12px;
+}
+
+canvas{
+    height:180px!important;
+}
+
+/* 🔥 GAUGE (MISMO ESTILO) */
+.gauge{
+    width:100%;
+    height:100%;
+    max-width:140px;
+    max-height:140px;
+    border-radius:50%;
+    margin:auto;
+    display:flex;
+    align-items:center;
+    justify-content:center;
+    position:relative;
+    
+}
+
+/* 🔥 MISMO CENTRO QUE LAS DEMÁS */
+.gauge::after{
+    content:"";
+    position:absolute;
+    width:70%;
+    height:70%;
+    background:#020617;
+    border-radius:50%;
+
+}
+
+/* 🔥 TEXTO GAUGE */
+.gauge-text{
+    position:absolute;
+    z-index:2;
+    text-align:center;
+    display:flex;
+    flex-direction:column;
+    align-items:center;
+    justify-content:center;
+}
+
+.cardCenter .valorGrande{
+    font-size:14px !important;
+    
+}
+
+.cardCenter .subTexto{
+    font-size:px !important;
+    color:#facc15;
+}
+
+.cardCenter .subMini{
+    font-size:9px !important;
+    
+}
+
+.card{
+    width:100%;
+    box-sizing:border-box;
+}
+
+
+
+/* 🔥 NAV */
+.nav{
+    position:fixed;
+    bottom:0;
+    width:100%;
+    max-width:420px;
+    background:#020617;
+    display:flex;
+    justify-content:space-around;
+    padding:10px 0;
+}
+
+.nav div{
+    font-size:12px;
+    text-align:center;
+}
+
+
+#weatherCard{
+    border-radius:16px;
+    padding:5px 12px;
+    color:white;
+    position:relative;
+    overflow:hidden;
+}
+
+/* ☀️ despejado */
+.weather-sun{
+    background:linear-gradient(135deg,#f59e0b,#f97316);
+}
+
+/* ☁️ nubes */
+.weather-cloud{
+    background:linear-gradient(135deg,#334155,#64748b);
+}
+
+/* 🌧 lluvia */
+.weather-rain{
+    background:linear-gradient(135deg,#1e3a8a,#1e40af);
+}
+
+.weatherContainer{
+    display:flex;
+    justify-content:space-between;
+    align-items:center;
+}
+
+.weatherTop{
+    display:flex;
+    align-items:center;
+    gap:10px;
+}
+
+.weatherDesc{
+    font-size:16px;
+    font-weight:700;
+    letter-spacing:0.3px;
+}
+
+.weatherCity{
+    font-size:18px;
+    opacity:0.9;
+}
+
+.weatherTemp{
+    font-size:28px;
+    font-weight:700;
+}
+
+#anioActualTexto{
+    color:#09c567;
+    font-size:14px;
+}
+
+#mejorMes{
+    color:#ffffff;
+    font-size:15como es px;
+}
+
+#weatherIcon img{
+    width:30px;
+    filter:drop-shadow(0 4px 10px rgba(0,0,0,0.4));
+}
+
+.weather-night{
+    background:linear-gradient(135deg,#020617,#0f172a,#1e293b);
+}
+
+
+
+/* CANVAS GENERAL */
+canvas{
+    height:180px!important;
+}
+</style>
+</head>
+
+<body>
+
+<div class="container">
+
+<div class="header">☀️ SolarCRIS</div>
+<div class="header">👤 Instalación Colectiva La Viña 2</div>
+<div class="topBar">
+    <div>Desarrollador Cristóbal Jiménez</div>
+    <div id="horaUpdate">--</div>
+</div>
+
+
+  <div class="card" id="weatherCard">
+
+    <div class="weatherContainer">
+
+        <!-- IZQUIERDA -->
+        <div class="weatherLeft">
+            <div class="weatherTop">
+                <div id="weatherIcon"></div>
+
+                <div>
+                    <div id="weatherDesc" class="weatherDesc">--</div>
+                    <div id="weatherCity" class="weatherCity">--</div>
+                </div>
+            </div>
+        </div>
+
+        <!-- DERECHA -->
+        <div class="weatherRight">
+            <div id="weatherTemp" class="weatherTemp">--°</div>
+        </div>
+
+    </div>
+
+</div> <!-- 🔥 AQUÍ CIERRAS EL CLIMA -->
+
+<!-- HOY + MES (YA FUERA) -->
+<div class="grid">
+
+    <!-- PRODUCCIÓN HOY -->
+    <div class="card cardCenter" id="cardHoy">
+        <div class="centerContent">
+            <div id="produccionHoy" class="valorGrande">--</div>
+            <div class="subTexto">Producción Hoy</div>
+        </div>
+    </div>
+
+    <!-- POTENCIA -->
+    <div class="card cardCenter" id="gauge">
+        <div class="centerContent">
+            <div id="kw" class="valorGrande">--</div>
+            <div class="subTexto">Potencia Solar</div>
+        </div>
+    </div>
+
+    <!-- TOTAL MES -->
+    <div class="card cardCenter" id="cardMes">
+        <div class="centerContent">
+            <div id="mesTotal" class="valorGrande">--</div>
+            <div class="subTexto">Total Mes Acumulado</div>
+        </div>
+    </div>
+
+    <!-- TU PRODUCCIÓN -->
+    <div class="card cardCenter" id="cardProp">
+        <div class="centerContent">
+            <div id="mesProp" class="valorGrande">--</div>
+            <div class="subTexto">Este Mes Obtendrás</div>
+        </div>
+    </div>
+
+</div>
+
+<div class="card">
+
+
+
+    <div class="consumoBox">
+        <div class="title">🕒 Mejores Horas de Hoy para Consumir Electricidad</div>
+        
+        <div id="horasConsumo" class="consumoTexto"></div>
+
+        <canvas id="graficaHoras"></canvas>
+
+        <div id="picoHora" class="picoHora"></div>
+    </div>
+
+</div>
+
+
+<!-- GRAFICA MENSUAL -->
+<div class="card">
+
+<div style="display:flex; justify-content:space-between; align-items:center;">
+    <div class="title">Tu Producción Mensual</div>
+    <div id="mejorMes" class="title" style="text-align:right;"></div>
+</div>
+<div id="anioActualTexto" class="subMini"></div>
+<canvas id="graficaMensual"></canvas>
+
+</div>
+
+
+
+
+<!-- GRAFICA DIARIA -->
+<div class="card">
+    <div style="display:flex; justify-content:space-between; align-items:center;">
+        <div class="title">Producción Diaria del Inversor</div>
+        <div id="mejorDia" class="title" style="text-align:right;"></div>
+
+    </div>
+    <canvas id="grafica"></canvas>
+</div>
+
+</div>
+
+</div>
+
+<script>
+
+const API_KEY = "44IM75FQ75FN9HBMITL48BLJVXQ7POR6";
+const SITE_ID = "4595713";
+
+//COLORES DE LOS EJES DE LOS GRAFICOS
+Chart.defaults.color = "#facc15";
+
+const supabaseClient = supabase.createClient(
+"https://mybooeipkgfwhvwszysr.supabase.co",
+"sb_publishable_N7BPbBJcbKUElxxRg6xkCw_uj99wyuy"
+);
+
+let chart, chartMensual;
+let potenciaActual = 0;
+
+
+// 🔥 activar datalabels
+Chart.register(ChartDataLabels);
+
+// PREDICCION FOTOVOLTAICA
+
+
+
+function formatearEnergia(valor){
+
+    if(valor >= 1000){
+        return (valor / 1000).toFixed(1) + " MWh";
+    }else{
+        return valor.toFixed(0) + " kWh";
+    }
+}
+
+// GAUGE
+function actualizarGauge(valor){
+
+    let max = 100000; // 100 kW
+    let porcentaje = Math.min(valor/max,1);
+    let grados = porcentaje * 360;
+// convertir W → kW
+let kw = valor / 1000;
+
+// mostrar con 2 decimales
+const kwEl = document.getElementById("kw");
+if(kwEl){
+    kwEl.innerText = kw.toFixed(1) + " kW";
+}
+let color;
+
+if(porcentaje < 0.3){
+    color = "#ef4444"; // rojo
+}
+else if(porcentaje < 0.6){
+    color = "#f59e0b"; // naranja
+}
+else{
+    color = "#22c55e"; // verde
+}
+
+    // ✔ proteger gauge también
+    const gaugeEl = document.getElementById("gauge");
+    if(gaugeEl){
+        gaugeEl.style.background = `conic-gradient(${color} ${grados}deg, #0f172a ${grados}deg)`;
+    }
+
+    // ✔ proteger textos
+    const wattsEl = document.getElementById("watts");
+    const porcentajeEl = document.getElementById("porcentaje");
+
+    if(wattsEl){
+        wattsEl.innerText = valor.toFixed(0) + " W";
+    }
+
+    if(porcentajeEl){
+        porcentajeEl.innerText = (porcentaje*100).toFixed(0) + "%";
+    }
+}
+
+// GRAFICA HORAS TIEMPO REAL
+async function graficaPotenciaReal(){
+
+    let hoy = new Date();
+    let fecha = hoy.toISOString().split("T")[0];
+
+    let url = `https://monitoringapi.solaredge.com/site/${SITE_ID}/power?startTime=${fecha}%2000:00:00&endTime=${fecha}%2023:59:59&api_key=${API_KEY}`;
+
+    
+    let r = await fetch(url);
+    let d = await r.json();
+
+    let valoresRaw = d.power?.values || [];
+
+    let labels = [];
+    let valores = [];
+
+    let maxValor = 0;
+    let indicePico = 0;
+
+    valoresRaw.forEach((v, i)=>{
+
+        let hora = v.date.split(" ")[1].slice(0,5); // HH:mm
+
+        labels.push(hora);
+
+        let kw = (v.value || 0) / 1000;
+        if(kw < 0.02) kw = 0;
+        valores.push(Math.round(kw));
+
+        if(kw > maxValor){
+            maxValor = kw;
+            indicePico = i;
+        }
+    });
+
+// 🔥 encontrar inicio y fin de producción
+let inicio = valores.findIndex(v => v > 0);
+let fin = valores.length - 1 - [...valores].reverse().findIndex(v => v > 0);
+
+// si no hay producción
+if(inicio === -1 || fin === -1){
+    inicio = 0;
+    fin = valores.length - 1;
+}
+
+// 🔥 añadir margen de 2 horas (cada punto = 15 min → 4 puntos = 1h)
+let margen = 8; // 2 horas = 8 puntos
+
+inicio = Math.max(0, inicio - margen);
+fin = Math.min(valores.length - 1, fin + margen);
+
+// 🔥 recortar
+labels = labels.slice(inicio, fin + 1);
+valores = valores.slice(inicio, fin + 1);
+
+// 🔥 recalcular pico correctamente
+let max = Math.max(...valores);
+indicePico = valores.indexOf(max);
+
+    const ctx = document.getElementById("graficaHoras");
+    if(!ctx) return;
+
+    if(window.chartHoras) window.chartHoras.destroy();
+
+   window.chartHoras = new Chart(ctx,{
+    type:'line',
+    data:{
+        labels,
+        datasets:[{
+            data:valores,
+            borderColor:"#22c55e",
+            backgroundColor:"rgba(34,197,94,0.1)",
+            fill:true,
+            tension:0.5,
+            pointRadius:(c)=> c.dataIndex === indicePico ? 5 : 0
+        }]
+    },
+options:{
+    responsive:true,
+    maintainAspectRatio:false,
+    
+    plugins:{
+        legend:{display:false},
+        tooltip:{enabled:false},
+        datalabels:{ display:false } // 🔥 limpio total
+    },
+
+    // 🔥 AQUÍ VA scales (DENTRO)
+    scales:{
+        x:{
+            grid:{display:false},
+            ticks:{
+                color:"#facc15"
+            }
+        },
+        y:{
+            suggestedMax: Math.max(...valores) + 5,
+            display:true,
+            ticks:{
+                color:"#facc15",
+                callback:(v)=> v + " kW"
+            },
+            grid:{
+                color:"rgba(255,255,255,0.05)"
+            }
+        }
+    }
+}
+});
+
+    // 🔥 pico real
+let picoEl = document.getElementById("picoHora");
+
+if(picoEl){
+
+picoEl.innerHTML = "⭐ Pico Mas Alto de Hoy: " + labels[indicePico];
+
+}
+
+} // 🔥 cierre de graficaPotenciaReal
+
+//WEATHER TIEMPO REAL
+
+async function cargarTiempo(){
+
+    const API_KEY_WEATHER = "7514bcda54bd679a8c6949fb26e7dede";
+
+    let lat = 36.42;
+    let lon = -5.15;
+
+    let url = `https://api.openweathermap.org/data/2.5/weather?lat=${lat}&lon=${lon}&appid=${API_KEY_WEATHER}&units=metric&lang=es`;
+
+    let r = await fetch(url);
+    let d = await r.json();
+
+    let temp = d.main?.temp || 0;
+    let desc = d.weather?.[0]?.description || "";
+    let icon = d.weather?.[0]?.icon || "";
+    let city = d.name || "";
+
+    // 🔥 detectar noche
+    let esNoche = icon.includes("n");
+
+    document.getElementById("weatherTemp").innerText = temp.toFixed(1) + "°";
+
+    let textoClima = "";
+
+    if(desc.includes("lluvia")){
+        textoClima = "🌧 Día lluvioso";
+    }
+    else if(desc.includes("nube")){
+        textoClima = "☁️ Nuboso";
+    }
+    else{
+        textoClima = esNoche ? "Despejado" : "Soleado";
+    }
+
+    document.getElementById("weatherDesc").innerText = textoClima;
+    document.getElementById("weatherCity").innerText = city;
+
+    document.getElementById("weatherIcon").innerHTML =
+    `<img src="https://openweathermap.org/img/wn/${icon}@2x.png">`;
+
+    //calcularHorasConsumo(desc);
+
+    const card = document.getElementById("weatherCard");
+
+    card.classList.remove("weather-sun","weather-cloud","weather-rain","weather-night");
+
+    if(desc.includes("lluvia")){
+        card.classList.add("weather-rain");
+    }
+    else if(desc.includes("nube")){
+        card.classList.add("weather-cloud");
+    }
+    else{
+        if(esNoche){
+            card.classList.add("weather-night");
+        }else{
+            card.classList.add("weather-sun");
+        }
+    }
+}
+
+// GUARDAMOS LOS DATOS DE ESTE MES TIENES EN LA BASE DE DATOS DIARIAMENTE
+async function guardarMes(totalMes, tuParte){
+
+    let mesActual = new Date().toISOString().slice(0,7) + "-01";
+
+    // 🔥 borrar mes actual
+    await supabaseClient
+        .from('produccion')
+        .delete()
+        .eq('mes', mesActual);
+
+    // 🔥 insertar nuevo dato (USANDO produccion ✔)
+    await supabaseClient
+        .from('produccion')
+        .insert({
+            mes: mesActual,
+            reparto: tuParte,
+            produccion: totalMes / 1000
+        });
+
+   // console.log("✅ guardado correcto");
+}
+
+function pintarCirculo(id, valor, max){
+
+    // 🔥 PROTEGER VALOR
+    valor = Number(valor) || 0;
+
+    let porcentaje = valor / max;
+
+    // 🔥 limitar bien
+    if(porcentaje > 1) porcentaje = 1;
+    if(porcentaje < 0) porcentaje = 0;
+
+    let grados = porcentaje * 360;
+
+    let color = "#22c55e";
+    if(porcentaje < 0.2) color = "#ef4444";
+    else if(porcentaje < 0.3) color = "#f59e0b";
+
+    const el = document.getElementById(id);
+    if(!el) return;
+
+    el.style.setProperty(
+        "background",
+        `conic-gradient(${color} ${grados}deg, #020617 ${grados}deg)`,
+        "important"
+    );
+}
+
+function prediccionReal(kwhActual){
+
+    let ahora = new Date();
+    let hora = ahora.getHours();
+
+    // horas solares aprox (ajústalo si quieres)
+    let inicio = 8;
+    let fin = 20;
+
+    let horasTotales = fin - inicio;
+    let horasPasadas = hora - inicio;
+
+    if(horasPasadas <= 0) return;
+
+    let porcentajeDia = horasPasadas / horasTotales;
+
+    if(porcentajeDia <= 0) return;
+
+    // 🔥 estimación real
+    let estimadoFinal = kwhActual / porcentajeDia;
+
+    let min = estimadoFinal * 0.9;
+    let max = estimadoFinal * 1.1;
+
+    document.getElementById("predTexto").innerText =
+        `⚡ ${min.toFixed(0)} – ${max.toFixed(0)} kWh`;
+
+    document.getElementById("predDetalle").innerText =
+        "📊 Predicción real basada en producción actual";
+}
+
+
+function calcularHorasConsumo(desc){
+
+    let descLower = desc.toLowerCase();
+
+    let mejorInicio, mejorFin;
+    let antesInicio, antesFin;
+    let despuesInicio, despuesFin;
+
+    if(descLower.includes("despejado")){
+        mejorInicio = 12; mejorFin = 17;
+    }
+    else if(descLower.includes("nube")){
+        mejorInicio = 12; mejorFin = 15;
+    }
+    else if(descLower.includes("lluvia")){
+        mejorInicio = 13; mejorFin = 15;
+    }
+    else{
+        mejorInicio = 12; mejorFin = 16;
+    }
+
+    // horas cercanas
+    antesInicio = mejorInicio - 2;
+    antesFin = mejorInicio;
+
+    despuesInicio = mejorFin;
+    despuesFin = mejorFin + 2;
+
+    function h(hora){
+        return horas[val];
+    }
+
+    const el = document.getElementById("horasConsumo");
+
+    if(el){
+el.innerHTML = "";
+    }
+
+    // 🔥 AÑADIDO CLAVE → dibujar gráfica
+    pintarGraficaHoras(mejorInicio, mejorFin, desc);
+}
+
+
+
+
+// 🧩 EJEMPLO CORRECTO
+function pintarGraficaHoras(mejorInicio, mejorFin, desc){
+
+    desc = desc || "";
+
+    const picoEl = document.getElementById("picoHora");
+
+    let horas = [];
+    let valores = [];
+
+    let centro = (mejorInicio + mejorFin) / 2;
+
+    let maxValor = 0;
+    let indicePico = 0;
+
+    // 🔥 GENERAR DATOS
+    for(let h=8; h<=20; h++){
+
+        horas.push(h);
+
+        let valor;
+
+        if(desc.toLowerCase().includes("lluvia")){
+            valor = Math.random() * 2 + 0.5;
+        }
+        else if(desc.toLowerCase().includes("nube")){
+            valor = Math.exp(-Math.pow((h - centro)/1.4, 2)) * 55;
+        }
+        else{
+            valor = Math.exp(-Math.pow((h - centro)/1.6, 2)) * 130;
+        }
+
+        // 🔥 ajustar según potencia real
+        if(potenciaActual < 200){
+            valor *= 0.3;
+        }
+
+        valores.push(valor);
+
+        if(valor > maxValor){
+            maxValor = valor;
+            indicePico = horas.length - 1;
+        }
+    }
+
+    // 🔥 TEXTO PICO
+    if(picoEl){
+        if(desc.toLowerCase().includes("lluvia")){
+            picoEl.innerHTML = "⚠️ Producción muy baja hoy";
+        }else{
+            picoEl.innerHTML = "⭐ Mejor hora: <b>" + horas[indicePico] + ":00</b>";
+        }
+    }
+
+    const canvas = document.getElementById("graficaHoras");
+    if(!canvas) return;
+
+    const ctx = canvas.getContext("2d");
+
+    if(window.chartHoras) window.chartHoras.destroy();
+
+    // 🔥 CREAR GRÁFICA
+    window.chartHoras = new Chart(ctx,{
+        type:'line',
+        data:{
+            labels: horas, // ✅ CORREGIDO
+            datasets:[{
+                data: valores,
+                borderColor:"#22c55e",
+                backgroundColor:"rgba(34,197,94,0.1)",
+                fill:true,
+                tension:0.5,
+                borderWidth:3,
+                pointRadius:(c)=> c.dataIndex === indicePico ? 5 : 0,
+                pointBackgroundColor:"#ffffff"
+            }]
+        },
+        options:{
+            responsive:true,
+            maintainAspectRatio:false,
+
+            layout:{
+                padding:{ top:20 }
+            },
+
+            plugins:{
+                legend:{display:false},
+                tooltip:{enabled:true},
+                datalabels:{ display:false }
+            },
+
+            scales:{
+                x:{
+                    grid:{display:false},
+                    ticks:{
+                        color:"#ffffff",
+                        maxTicksLimit:6
+                    }
+                },
+                y:{
+                    display:true,
+                    ticks:{
+                        color:"#ffffff",
+                        maxTicksLimit:4,
+                        callback:(v)=> Math.round(v) + " kW"
+                    },
+                    grid:{
+                        color:"rgba(255,255,255,0.05)"
+                    }
+                }
+            }
+        }
+    });
+}
+
+async function tiempoReal(){
+
+    let o=await fetch(`https://monitoringapi.solaredge.com/site/${SITE_ID}/overview?api_key=${API_KEY}`);
+    let d=await o.json();
+
+    let kwh=(d.overview?.lastDayData?.energy||0)/1000;
+
+    produccionHoy.innerHTML = `${kwh.toFixed(0)} kWh`;
+
+//console.log("prediccionReal ejecutada");
+    // 🔥 AQUÍ
+    pintarCirculo("cardHoy", kwh, 600);
+
+    horaUpdate.innerText="Actualizado "+new Date().toLocaleTimeString();
+
+    potenciaActual = d.overview?.currentPower?.power || 0;
+
+    actualizarGauge(potenciaActual);
+    
+}
+
+// MES
+async function cargarTotales(){
+
+    let hoy=new Date();
+    let y=hoy.getFullYear();
+    let m=String(hoy.getMonth()+1).padStart(2,'0');
+
+    let diasMes = new Date(y, m, 0).getDate();
+
+    let url=`https://monitoringapi.solaredge.com/site/${SITE_ID}/energy?timeUnit=MONTH&startDate=${y}-${m}-01&endDate=${y}-${m}-${diasMes}&api_key=${API_KEY}`;
+
+    let r=await fetch(url);
+    let d=await r.json();
+
+    let mwh=(d.energy?.values?.[0]?.value||0)/1000000;
+    let totalMes = mwh * 1000;
+
+    let coef = 1.27 / 100;
+    let tuParte = totalMes * coef * 0.974;
+
+    mesTotal.innerText = formatearEnergia(totalMes);
+    mesProp.innerText = tuParte.toFixed(0) + " kWh";
+
+    // 🔥 AÑADIDO
+
+    pintarCirculo("cardMes", totalMes, 16000);
+    pintarCirculo("cardProp", tuParte, 250);
+
+    await guardarMes(totalMes, tuParte);
+    //pintarCirculo("cardMes", totalMes, totalMes * 5);
+    //pintarCirculo("cardProp", tuParte, tuParte * 4.8);
+
+        
+}
+
+// GRAFICA DIARIA
+async function grafica(){
+
+    try{
+
+        let hoy = new Date();
+        let y = hoy.getFullYear();
+        let m = String(hoy.getMonth()+1).padStart(2,'0');
+        let diaActual = hoy.getDate();
+
+        let diasMes = new Date(y, m, 0).getDate();
+
+        let url = `https://monitoringapi.solaredge.com/site/${SITE_ID}/energy?timeUnit=DAY&startDate=${y}-${m}-01&endDate=${y}-${m}-${diasMes}&api_key=${API_KEY}`;
+
+        let r = await fetch(url);
+        let d = await r.json();
+
+        let valoresRaw = d.energy?.values || [];
+
+        let labels = [];
+        let valores = [];
+
+        let maxAntesDeHoy = 0;
+
+for(let i=0;i<diaActual;i++){
+
+let hoyValor = valores[diaActual-1] || 0;
+let progreso = maxAntesDeHoy > 0 ? (hoyValor / maxAntesDeHoy * 100) : 0;
+
+// 🔥 sacar día del mejor
+let indiceMejor = valores.indexOf(maxAntesDeHoy);
+let diaMejor = indiceMejor + 1;
+
+if(hoyValor > maxAntesDeHoy){
+    mejorDia.innerHTML = `
+🔥 Nuevo récord<br>
+Día ${diaActual} - ${hoyValor.toFixed(0)} kWh
+`;
+}else{
+    mejorDia.innerHTML = `
+⭐ Mejor Día del Mes<br>
+Día ${diaMejor} - ${maxAntesDeHoy.toFixed(0)} kWh<br>
+${hoyValor > 0 ? `Hoy: ${progreso.toFixed(0)}%` : ""}
+`;
+}
+labels.push((i+1).toString());
+
+    let valor = valoresRaw[i]?.value || 0;
+    let kwh = valor / 1000;
+
+    valores.push(kwh);
+
+    // 🔥 SOLO días anteriores (no hoy)
+    if(i < diaActual-1 && kwh > maxAntesDeHoy){
+        maxAntesDeHoy = kwh;
+    }
+}
+
+        // 🔥 detectar si hoy rompe récord
+        let hoyValor = valores[diaActual-1] || 0;
+        let esRecord = hoyValor > maxAntesDeHoy;
+
+        // 🔥 TEXTO PRO
+        if(esRecord){
+            mejorDia.innerHTML = `🔥 Nuevo récord<br>${hoyValor.toFixed(0)} kWh`;
+        }else{
+          //  mejorDia.innerHTML = `⭐ Mejor Día del Mes<br>${maxAntesDeHoy.toFixed(1)} kWh`;
+        }
+
+        // 🔥 COLORES PRO
+let valoresSinHoy = valores.slice(0, diaActual-1);
+
+// 🔥 NO redeclarar maxAntesDeHoy
+let indiceMejor = valoresSinHoy.indexOf(maxAntesDeHoy);
+
+let colores = valores.map((v,i)=>{
+
+    // 🟢 HOY récord
+    if(i === diaActual-1 && v > maxAntesDeHoy){
+        return "#22c55e";
+    }
+
+    // 🟢 MEJOR DÍA
+    if(i === indiceMejor){
+        return "#16a34a";
+    }
+
+    return "#3b82f6";
+});
+        const ctx = document.getElementById("grafica");
+
+        if(chart) chart.destroy();
+
+        chart = new Chart(ctx,{
+            type:'bar',
+            data:{
+                labels,
+                datasets:[{
+                    data:valores,
+                    backgroundColor:colores,
+                    borderRadius:6
+                }]
+            },
+            options:{
+                interaction: {
+    mode: null
+},
+hover: {
+    mode: null
+},
+                plugins:{
+                    legend:{display:false},
+datalabels:{
+    color:"#ffffff",
+
+    anchor:"end",
+
+    align:(context)=>{
+        let value = context.dataset.data[context.dataIndex];
+        return value < 100 ? "end" : "start";
+    },
+
+    offset:(context)=>{
+        let value = context.dataset.data[context.dataIndex];
+        return value < 100 ? 0 : 10;
+    },
+
+    font:{
+        weight:"bold",
+        size:12
+    },
+
+    formatter:(value)=>{
+        if(value <= 0) return "";
+        let num = Math.round(value).toString();
+        return num.split("");
+    }
+}
+                },
+                scales:{
+                    x:{grid:{display:false}},
+                    y:{
+                        grid:{color:"#334155"},
+                        beginAtZero:true,
+                        suggestedMax: (Math.max(...valores) || 100) * 1.2
+                    }
+                }
+            }
+        });
+
+        // 🔥 EFECTO VISUAL PRO (flash si récord)
+        if(esRecord){
+            document.getElementById("grafica").style.boxShadow = "0 0 20px #22c55e";
+            setTimeout(()=>{
+                document.getElementById("grafica").style.boxShadow = "none";
+            }, 5000);
+        }
+
+    }catch(err){
+        console.error(err);
+    }
+}
+
+
+// GRAFICA MENSUAL
+async function cargarDatosMensuales(){
+
+    const {data} = await supabaseClient
+        .from('produccion')
+        .select('*')
+        .order('mes');
+
+    let labels = [];
+    let valores = [];
+
+    data.forEach(d => {
+
+        let f = new Date(d.mes);
+
+        let mes = f.toLocaleDateString('es-ES',{month:'short'}).replace('.','');
+        let año = f.getFullYear().toString().slice(-2);
+
+        labels.push(mes + año);
+
+        // 🔥 aseguramos número correcto
+        valores.push(Number(d.reparto));
+    });
+
+    // 🔥 ACUMULADO AÑO (solo hasta mes actual)
+    let hoy = new Date();
+    let añoActual = hoy.getFullYear();
+    let mesActual = hoy.getMonth();
+
+    let acumulado = data
+        .filter(d => {
+            let fecha = new Date(d.mes);
+            return fecha.getFullYear() === añoActual &&
+                   fecha.getMonth() <= mesActual;
+        })
+        .reduce((sum, d) => sum + Number(d.reparto), 0);
+
+    // 🔥 MOSTRAR EN PANTALLA
+    let anioActualEl = document.getElementById("anioActualTexto");
+
+    if(anioActualEl){
+        anioActualEl.innerHTML = `⚡ Año en Curso: ${acumulado.toFixed(0)} kwh.`;
+    }
+
+    dibujarGraficaMensual(labels, valores);
+}
+
+
+
+function dibujarGraficaMensual(labels,valores){
+
+    if(chartMensual) chartMensual.destroy();
+
+    let max = Math.max(...valores);
+    let min = Math.min(...valores);
+
+    // 🔥 MEJOR MES (AÑADIDO)
+    let indice = valores.indexOf(max);
+    let mejorMesTexto = document.getElementById("mejorMes");
+
+    if(mejorMesTexto){
+        mejorMesTexto.innerHTML = `
+        ⭐ Mejor Mes y Año<br>${labels[indice]} - ${max.toFixed(0)} kWh
+        `;
+    }
+
+    let colores = valores.map(v=>{
+        if(v===max) return "#22c55e";
+        if(v===min) return "#ef4444";
+        return "#3b82f6";
+    });
+
+    chartMensual = new Chart(graficaMensual,{
+        type:'bar',
+        data:{
+            labels,
+            datasets:[{
+                data:valores,
+                backgroundColor:colores,
+                borderRadius:8
+            }]
+        },
+        options:{
+            interaction:{ mode:null },
+            hover:{ mode:null },
+
+            plugins:{
+                legend:{display:false},
+                datalabels:{
+                    color:"#ffffff",
+                    textStrokeColor:"#000000",
+                    textStrokeWidth:2,
+                    anchor:"end",
+                    align:"top",
+                    offset:-4,
+                    font:{
+                        weight:"bold",
+                        size:12,
+                        family:"Arial"
+                    },
+                    formatter:(value)=> value.toFixed(0)
+                }
+            },
+
+            scales:{
+                x:{
+                    grid:{display:false}
+                },
+                y:{
+                    grid:{color:"#334155"},
+                    beginAtZero:true,
+                    suggestedMax: max * 1.25
+                }
+            }
+        }
+    });
+
+}// ✅ ESTA LLAVE FALTABA
+
+// INIT
+window.onload=async()=>{
+    await tiempoReal();
+    await cargarTotales();
+    await grafica();
+    await cargarDatosMensuales();
+    await cargarTiempo(); // 🔥 ESTA LÍNEA
+    await graficaPotenciaReal();
+};
+
+setTimeout(()=>{
+    tiempoReal();
+    setInterval(tiempoReal,10000);
+},500);
+
+</script>
+
+</body>
+</html>
