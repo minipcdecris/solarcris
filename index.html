@@ -22,7 +22,7 @@ body{
 
 /* 🔥 CONTENEDOR */
 .container{
-    max-width:420px;
+    max-width:1200px;
     margin:auto;
     padding:10px;
         /* 🔥 SOLUCIÓN IPHONE */
@@ -39,15 +39,25 @@ body{
     margin-bottom:10px;
 }
 
-/* 🔥 GRID */
+/* 🔥 GRID SE ADAPTA A MOVIL, TABLET O PC*/
 .grid{
-    display:flex;
+    display:grid;
+    grid-template-columns: repeat(2, 1fr);
     gap:10px;
-    overflow-x:auto;
-    flex-wrap:nowrap;
-    justify-content:center;
-    
+}
 
+@media (min-width: 600px){
+    .grid{
+        grid-template-columns: repeat(3, 1fr);
+    }
+}
+
+@media (min-width: 900px){
+    .grid{
+        grid-template-columns: repeat(4, 1fr);
+        max-width:900px;
+        margin:auto;
+    }
 }
 
 .cardCenter{
@@ -70,8 +80,8 @@ body{
     text-align:center;
 
     aspect-ratio:1 / 1;
-    width:80%;
-    max-width:90px;
+    width:100%;
+    max-width:140px;
 
     border-radius:50%;
     position:relative;
@@ -387,7 +397,8 @@ canvas{
 
 /* CANVAS GENERAL */
 canvas{
-    height:180px!important;
+    width:100% !important;
+    height:auto !important;
 }
 </style>
 </head>
@@ -399,7 +410,7 @@ canvas{
 <div class="header">☀️ SolarCRIS</div>
 <div class="header">👤 Instalación Colectiva La Viña 2</div>
 <div class="topBar">
-    <div>Desarrollador Cristóbal Jiménez.</div>
+    <div>Desarrollador Cristóbal Jiménez</div>
     <div id="horaUpdate">--</div>
 </div>
 
@@ -1190,6 +1201,7 @@ let colores = valores.map((v,i)=>{
                 }]
             },
             options:{
+
                 interaction: {
     mode: null
 },
@@ -1333,6 +1345,7 @@ function dibujarGraficaMensual(labels,valores){
             }]
         },
         options:{
+        
             interaction:{ mode:null },
             hover:{ mode:null },
 
