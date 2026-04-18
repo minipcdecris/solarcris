@@ -582,7 +582,8 @@ function actualizarGauge(valor){
     }
 
     let max = 100000; // 100 kW
-    let porcentaje = Math.min(valor/max,1);
+
+    let porcentaje = Math.min(valor / max, 1);
     let grados = porcentaje * 360;
 
     // 🔥 máximo (rayita)
@@ -620,7 +621,9 @@ if(gaugeEl){
         #0f172a ${gradosMax - 2}deg,
         #ffffff ${gradosMax - 2}deg,
         #ffffff ${gradosMax + 2}deg,
-        #0f172a ${gradosMax + 2}deg
+        #0f172a ${gradosMax + 2}deg,
+
+        #0f172a 360deg
     )`;
 }
 
