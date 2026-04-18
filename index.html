@@ -528,8 +528,10 @@ canvas{
 const API_KEY = "44IM75FQ75FN9HBMITL48BLJVXQ7POR6";
 const SITE_ID = "4595713";
 
+//VARIABLES
 let maxPotenciaDia = 0;
 let ultimoDia = new Date().toDateString();
+let maxDesdeGrafica = 0;
 
 //COLORES DE LOS EJES DE LOS GRAFICOS
 Chart.defaults.color = "#facc15";
@@ -587,7 +589,7 @@ function actualizarGauge(valor){
     let grados = porcentaje * 360;
 
     // 🔥 máximo (rayita)
-    let porcentajeMax = Math.min(maxPotenciaDia / max, 1);
+    let porcentajeMax = Math.min(maxDesdeGrafica / max, 1);
     let gradosMax = porcentajeMax * 360;
 
     // convertir W → kW
@@ -619,8 +621,8 @@ if(gaugeEl){
         #0f172a ${grados}deg,
 
         #0f172a ${gradosMax - 2}deg,
-        #ffffff ${gradosMax - 2}deg,
-        #ffffff ${gradosMax + 2}deg,
+        #ffffff ${gradosMax - 0.5}deg,
+        #ffffff ${gradosMax + 0.5}deg,
         #0f172a ${gradosMax + 2}deg,
 
         #0f172a 360deg
@@ -702,6 +704,10 @@ valores = valores.slice(inicio, fin + 1);
 // 🔥 recalcular pico correctamente
 let max = Math.max(...valores);
 indicePico = valores.indexOf(max);
+
+// 🔥 AÑADE ESTO
+maxDesdeGrafica = max * 1000; // pasar kW → W
+actualizarGauge(potenciaActual);
 
     const ctx = document.getElementById("graficaHoras");
     if(!ctx) return;
@@ -802,8 +808,12 @@ if(picoEl){
 picoEl.innerHTML = `
 <span class="picoTexto">
 
-<span style="color:#ffffff; font-weight:bold;">
-☀️ ${inicioHora}   🌙 ${finHora}
+<span style="color:#ffffff; font-size:14px;">
+    ☀️ <span style="font-size:14px;">Amanece:</span> 
+    <b>${inicioHora}</b>  
+    •  
+    🌙 <span style="font-size:14px;">Atardece:</span> 
+    <b>${finHora}</b>
 </span>
 
 <br>
@@ -1315,7 +1325,7 @@ datalabels:{
 
     font:{
         weight:"bold",
-        size:12
+        size:9
     },
 
     formatter:(value)=>{
@@ -1326,7 +1336,18 @@ datalabels:{
 }
                 },
                 scales:{
-                    x:{grid:{display:false}},
+                    x:{
+    grid:{display:false},
+    ticks:{
+        color:"#ffffff",
+        font:{
+            size:8   // 🔥 más pequeño
+        },
+        autoSkip:false,   // 🔥 no salta días
+        maxRotation:0,
+        minRotation:0
+    }
+},
                     y:{
                         grid:{color:"#334155"},
                         beginAtZero:true,
