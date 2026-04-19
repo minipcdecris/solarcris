@@ -1,4 +1,4 @@
-<!DOCTYPE html>
+busca el error por que no lo veo:  <!DOCTYPE html>
 <html lang="es">
 <head>
 <meta charset="UTF-8">
@@ -543,7 +543,9 @@ const supabaseClient = supabase.createClient(
 
 let chart, chartMensual;
 let potenciaActual = 0;
-
+let labelsGlobal = [];
+let valoresGlobal = [];
+let indicePicoGlobal = 0;
 
 // 🔥 activar datalabels
 Chart.register(ChartDataLabels);
@@ -705,9 +707,17 @@ valores = valores.slice(inicio, fin + 1);
 let max = Math.max(...valores);
 indicePico = valores.indexOf(max);
 
+// 🔥 guardar datos para tiempo real
+labelsGlobal = labels;
+valoresGlobal = valores;
+indicePicoGlobal = indicePico;
+
 // 🔥 AÑADE ESTO
 maxDesdeGrafica = max * 1000; // pasar kW → W
 actualizarGauge(potenciaActual);
+
+// 🔥 actualizar texto
+actualizarTextoPico(labels, valores, indicePico);
 
     const ctx = document.getElementById("graficaHoras");
     if(!ctx) return;
@@ -793,7 +803,9 @@ plugins:{
         }
     }
 }
+
 });
+
 
 // 🔥 pico real + tu producción en tiempo real
 let picoEl = document.getElementById("picoHora");
@@ -808,13 +820,8 @@ if(picoEl){
 picoEl.innerHTML = `
 <span class="picoTexto">
 
-<span style="color:#ffffff; font-size:14px;">
-    ☀️ <span style="font-size:14px;">Amanecer:</span> 
-    <b>${inicioHora}</b>  
-    •  
-    🌙 <span style="font-size:14px;">Atardecer:</span> 
-    <b>${finHora}</b>
-</span>
+⚡ Producción: 
+☀️ <b>${inicioHora}</b> → 🌙 <b>${finHora}</b>
 
 <br>
 
@@ -1148,8 +1155,6 @@ async function tiempoReal(){
 
     produccionHoy.innerHTML = `${kwh.toFixed(0)} kWh`;
 
-//console.log("prediccionReal ejecutada");
-    // 🔥 AQUÍ
     pintarCirculo("cardHoy", kwh, 600);
 
     horaUpdate.innerText="Actualizado "+new Date().toLocaleTimeString();
@@ -1157,7 +1162,14 @@ async function tiempoReal(){
     potenciaActual = d.overview?.currentPower?.power || 0;
 
     actualizarGauge(potenciaActual);
-    
+
+    // 🔥 AÑADE ESTO
+    if(labelsGlobal.length > 0){
+        actualizarTextoPico(labelsGlobal, valoresGlobal, indicePicoGlobal);
+    } else {
+        actualizarTextoPico(["--"], [0], 0);
+    }
+
 }
 
 // MES
@@ -1418,7 +1430,43 @@ async function cargarDatosMensuales(){
     dibujarGraficaMensual(labels, valores);
 }
 
+function actualizarTextoPico(labels, valores, indicePico){
 
+    let picoEl = document.getElementById("picoHora");
+    if(!picoEl) return;
+
+    let coef = 1.27 / 100;
+
+    let tuPotenciaW = potenciaActual * coef;
+    let tuPotenciaKW = tuPotenciaW / 1000;
+
+    let inicioHora = labels[0] || "--";
+    let finHora = labels[valores.length - 1] || "--";
+
+    picoEl.innerHTML = `
+    <span class="picoTexto">
+
+    ⚡ Producción: ☀️ <b>${inicioHora}</b> → 🌙 <b>${finHora}</b>
+
+    <br>
+
+    ☀️ Pico Mas Alto de Hoy: 
+    <b>${labels[indicePico]}</b> 
+    <span style="color:#facc15; font-weight:bold;">
+    (${valores[indicePico]} kW)
+    </span>
+
+    <br>
+
+    ⚡ Ahora Estas Obteniendo: 
+    <b>${tuPotenciaKW.toFixed(2)} kW</b> 
+    <span style="color:#facc15; font-weight:bold;">
+    (${Math.round(tuPotenciaW)} W)
+    </span>
+
+    </span>
+    `;
+}
 
 function dibujarGraficaMensual(labels,valores){
 
@@ -1504,6 +1552,7 @@ window.onload=async()=>{
 setTimeout(()=>{
     tiempoReal();
     setInterval(tiempoReal,10000);
+    setInterval(graficaPotenciaReal,20000); // cada 1 minuto
 },500);
 
 </script>
