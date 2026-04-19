@@ -1555,6 +1555,42 @@ setTimeout(()=>{
     setInterval(graficaPotenciaReal,20000); // cada 1 minuto
 },500);
 
+// 🔥 PULL TO REFRESH
+let startY = 0;
+let isPulling = false;
+
+document.addEventListener("touchstart", (e)=>{
+    if(window.scrollY === 0){ // solo si estás arriba
+        startY = e.touches[0].clientY;
+        isPulling = true;
+    }
+});
+
+document.addEventListener("touchmove", async (e)=>{
+
+    if(!isPulling) return;
+
+    let currentY = e.touches[0].clientY;
+
+    if(currentY - startY > 120){
+
+        isPulling = false; // evitar múltiples disparos
+
+        console.log("🔄 Refresh app");
+
+        await tiempoReal();
+        await graficaPotenciaReal();
+        await grafica();
+        await cargarTotales();
+        await cargarDatosMensuales();
+        await cargarTiempo();
+    }
+});
+
+document.addEventListener("touchend", ()=>{
+    isPulling = false;
+});
+
 </script>
 
 </body>
