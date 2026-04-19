@@ -433,7 +433,7 @@ canvas{
 <div class="header">☀️ SolarCRIS</div>
 <div class="header">👥 Instalación Colectiva La Viña 2</div>
 <div class="topBar">
-    <div>Desarrollador Cristóbal Jiménez V.2</div>
+    <div>Desarrollador Cristóbal Jiménez V.3</div>
     <div id="horaUpdate">--</div>
 </div>
 
@@ -1588,22 +1588,28 @@ document.addEventListener("touchstart", (e)=>{
         startY = e.touches[0].clientY;
         isPulling = true;
     }
-});
+}, { passive:true });
 
 document.addEventListener("touchmove", async (e)=>{
 
     if(!isPulling) return;
 
     let currentY = e.touches[0].clientY;
+    let diff = currentY - startY;
 
-    if(currentY - startY > 120){
+    if(diff > 100){
 
         isPulling = false;
 
         const loader = document.getElementById("loaderSolar");
 
-        // 🔥 mostrar icono
-        if(loader) loader.classList.add("show");
+        // 🔥 mostrar inmediatamente
+        if(loader){
+            loader.classList.add("show");
+        }
+
+        // 🔥 pequeña pausa para que se vea SIEMPRE
+        await new Promise(r => setTimeout(r, 300));
 
         console.log("🔄 Refresh app");
 
@@ -1614,12 +1620,14 @@ document.addEventListener("touchmove", async (e)=>{
         await cargarDatosMensuales();
         await cargarTiempo();
 
-        // 🔥 ocultar icono
         setTimeout(()=>{
-            if(loader) loader.classList.remove("show");
-        }, 600);
+            if(loader){
+                loader.classList.remove("show");
+            }
+        }, 500);
     }
-});
+
+}, { passive:false });
 
 document.addEventListener("touchend", ()=>{
     isPulling = false;
