@@ -27,6 +27,9 @@ body{
     padding:10px;
         /* 🔥 SOLUCIÓN IPHONE */
     padding-top: calc(env(safe-area-inset-top) + 10px);
+    <div id="loaderSolar" class="loaderSolar">
+    ☀️
+</div>
 }
 
 body{
@@ -62,6 +65,26 @@ body{
 
 .cardCenter{
     flex:0 0 auto;
+}
+
+.loaderSolar{
+    position:fixed;
+    top:-60px;
+    left:50%;
+    transform:translateX(-50%);
+    font-size:28px;
+    z-index:9999;
+    transition:0.3s ease;
+}
+
+.loaderSolar.show{
+    top:10px;
+    animation:spin 1s linear infinite;
+}
+
+@keyframes spin{
+    from{ transform:translateX(-50%) rotate(0deg); }
+    to{ transform:translateX(-50%) rotate(360deg); }
 }
 
 /* 🔥 CARDS GENERALES */
@@ -1551,16 +1574,17 @@ window.onload=async()=>{
 
 setTimeout(()=>{
     tiempoReal();
-    setInterval(tiempoReal,10000);
-    setInterval(graficaPotenciaReal,20000); // cada 1 minuto
+    setInterval(tiempoReal,30000);
+    setInterval(graficaPotenciaReal,30000);
 },500);
 
-// 🔥 PULL TO REFRESH
+
+// 🔥 PULL TO REFRESH + ANIMACIÓN
 let startY = 0;
 let isPulling = false;
 
 document.addEventListener("touchstart", (e)=>{
-    if(window.scrollY === 0){ // solo si estás arriba
+    if(window.scrollY === 0){
         startY = e.touches[0].clientY;
         isPulling = true;
     }
@@ -1574,7 +1598,12 @@ document.addEventListener("touchmove", async (e)=>{
 
     if(currentY - startY > 120){
 
-        isPulling = false; // evitar múltiples disparos
+        isPulling = false;
+
+        const loader = document.getElementById("loaderSolar");
+
+        // 🔥 mostrar icono
+        if(loader) loader.classList.add("show");
 
         console.log("🔄 Refresh app");
 
@@ -1584,6 +1613,11 @@ document.addEventListener("touchmove", async (e)=>{
         await cargarTotales();
         await cargarDatosMensuales();
         await cargarTiempo();
+
+        // 🔥 ocultar icono
+        setTimeout(()=>{
+            if(loader) loader.classList.remove("show");
+        }, 600);
     }
 });
 
@@ -1593,5 +1627,5 @@ document.addEventListener("touchend", ()=>{
 
 </script>
 
-</body>
+</body> 
 </html>
