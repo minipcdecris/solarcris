@@ -432,7 +432,7 @@ canvas{
 <div class="header">☀️ SolarCRIS</div>
 <div class="header">👥 Instalación Colectiva La Viña 2</div>
 <div class="topBar">
-    <div>Desarrollador Cristóbal Jiménez V.4</div>
+    <div>Desarrollador Cristóbal Jiménez V.5</div>
     <div id="horaUpdate">--</div>
 </div>
 
@@ -572,9 +572,22 @@ let indicePicoGlobal = 0;
 // 🔥 activar datalabels
 Chart.register(ChartDataLabels);
 
+// FORMATO DE HORA
+function formatearHoraSolarEdge(dateStr){
+
+    let partes = dateStr.split(" ");
+    let horaRaw = partes[1].slice(0,5);
+
+    let [h, m] = horaRaw.split(":").map(Number);
+
+    let offset = new Date().getTimezoneOffset() / -60;
+
+    h = (h + offset + 24) % 24;
+
+    return String(h).padStart(2,'0') + ":" + String(m).padStart(2,'0');
+}
+
 // PREDICCION FOTOVOLTAICA
-
-
 
 function formatearEnergia(valor){
 
@@ -688,7 +701,7 @@ async function graficaPotenciaReal(){
 
     valoresRaw.forEach((v, i)=>{
 
-        let hora = v.date.split(" ")[1].slice(0,5); // HH:mm
+let hora = v.date.split(" ")[1].slice(0,5);
 
         labels.push(hora);
 
@@ -703,11 +716,11 @@ async function graficaPotenciaReal(){
     });
 
 // 🔥 encontrar inicio y fin de producción
-let inicio = valores.findIndex(v => v > 0);
-let fin = valores.length - 1 - [...valores].reverse().findIndex(v => v > 0);
+let inicio = valores.findIndex(v => v >= 1);
+let fin = valores.length - 1 - [...valores].reverse().findIndex(v => v >= 1);
 
-let inicioHora = labels[inicio] || "--";
-let finHora = labels[fin] || "--";
+let inicioHoraReal = labels[inicio] || "--";
+let finHoraReal = labels[fin] || "--";
 
 // si no hay producción
 if(inicio === -1 || fin === -1){
@@ -843,7 +856,7 @@ picoEl.innerHTML = `
 <span class="picoTexto">
 
 ⚡ Producción: 
-☀️ <b>${inicioHora}</b> → 🌙 <b>${finHora}</b>
+☀️ <b>${inicioHoraReal}</b> → 🌙 <b>${finHoraReal}</b>
 
 <br>
 
@@ -1185,12 +1198,7 @@ async function tiempoReal(){
 
     actualizarGauge(potenciaActual);
 
-    // 🔥 AÑADE ESTO
-    if(labelsGlobal.length > 0){
-        actualizarTextoPico(labelsGlobal, valoresGlobal, indicePicoGlobal);
-    } else {
-        actualizarTextoPico(["--"], [0], 0);
-    }
+    graficaPotenciaReal();
 
 }
 
@@ -1573,8 +1581,8 @@ window.onload=async()=>{
 
 setTimeout(()=>{
     tiempoReal();
-    setInterval(tiempoReal,30000);
-    setInterval(graficaPotenciaReal,30000);
+    setInterval(tiempoReal,60000);
+    setInterval(graficaPotenciaReal,60000);
 },500);
 
 
