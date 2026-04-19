@@ -432,7 +432,7 @@ canvas{
 <div class="header">☀️ SolarCRIS</div>
 <div class="header">👥 Instalación Colectiva La Viña 2</div>
 <div class="topBar">
-    <div>Desarrollador Cristóbal Jiménez V.5</div>
+    <div>Desarrollador Cristóbal Jiménez V.6</div>
     <div id="horaUpdate">--</div>
 </div>
 
@@ -568,6 +568,10 @@ let potenciaActual = 0;
 let labelsGlobal = [];
 let valoresGlobal = [];
 let indicePicoGlobal = 0;
+let maxAyerGlobal = 0;
+
+let inicioReal = "--";
+let finReal = "--";
 
 // 🔥 activar datalabels
 Chart.register(ChartDataLabels);
@@ -693,6 +697,38 @@ async function graficaPotenciaReal(){
 
     let valoresRaw = d.power?.values || [];
 
+// 🔥 DATOS DE AYER
+let ayer = new Date();
+ayer.setDate(ayer.getDate() - 1);
+
+let fechaAyer = ayer.toISOString().split("T")[0];
+
+let urlAyer = `https://monitoringapi.solaredge.com/site/${SITE_ID}/power?startTime=${fechaAyer}%2000:00:00&endTime=${fechaAyer}%2023:59:59&api_key=${API_KEY}`;
+
+let rAyer = await fetch(urlAyer);
+let dAyer = await rAyer.json();
+
+let valoresAyer = dAyer.power?.values || [];
+
+let maxAyer = 0;
+
+
+valoresAyer.forEach(v=>{
+
+    if(v.value === null) return; // 🔥 ignorar null
+
+    let kw = v.value / 1000;
+
+    if(kw > maxAyer){
+        maxAyer = kw;
+    }
+});
+maxAyer = Math.round(maxAyer);
+maxAyerGlobal = maxAyer;
+// console.log("maxAyer final:", maxAyer);
+// redondear como tu gráfica
+//maxAyer = Math.round(maxAyer);
+
     let labels = [];
     let valores = [];
 
@@ -719,8 +755,18 @@ let hora = v.date.split(" ")[1].slice(0,5);
 let inicio = valores.findIndex(v => v >= 1);
 let fin = valores.length - 1 - [...valores].reverse().findIndex(v => v >= 1);
 
-let inicioHoraReal = labels[inicio] || "--";
-let finHoraReal = labels[fin] || "--";
+inicioReal = labels[inicio] || "--";
+
+let ultimoValor = valores[valores.length - 1];
+
+if(ultimoValor > 0){
+    let ahora = new Date();
+    let h = String(ahora.getHours()).padStart(2,'0');
+    let m = String(ahora.getMinutes()).padStart(2,'0');
+    finReal = `${h}:${m}`;
+} else {
+    finReal = labels[fin] || "--";
+}
 
 // si no hay producción
 if(inicio === -1 || fin === -1){
@@ -842,40 +888,7 @@ plugins:{
 });
 
 
-// 🔥 pico real + tu producción en tiempo real
-let picoEl = document.getElementById("picoHora");
 
-if(picoEl){
-
-    let coef = 1.27 / 100;
-
-    let tuPotenciaKW = (potenciaActual * coef) / 1000;
-    let tuPotenciaW = potenciaActual * coef;
-
-picoEl.innerHTML = `
-<span class="picoTexto">
-
-⚡ Producción: 
-☀️ <b>${inicioHoraReal}</b> → 🌙 <b>${finHoraReal}</b>
-
-<br>
-
-☀️ Pico Mas Alto de Hoy: <b>${labels[indicePico]}</b> 
-<span style="color:#facc15; font-weight:bold;">
-(${valores[indicePico]} kW)
-</span>
-
-<br>
-
-⚡ Ahora Estas Obteniendo: 
-<b>${tuPotenciaKW.toFixed(2)} kW</b> 
-<span style="color:#facc15; font-weight:bold;">
-(${Math.round(tuPotenciaW)} W)
-</span>
-
-</span>
-`;
-}
 
 } // 🔥 cierre de graficaPotenciaReal
 
@@ -1063,7 +1076,25 @@ el.innerHTML = "";
     pintarGraficaHoras(mejorInicio, mejorFin, desc);
 }
 
+function calcularDuracion(inicio, fin){
 
+    if(inicio === "--" || fin === "--") return "--";
+
+    let [h1, m1] = inicio.split(":").map(Number);
+    let [h2, m2] = fin.split(":").map(Number);
+
+    let inicioMin = h1 * 60 + m1;
+    let finMin = h2 * 60 + m2;
+
+    let diff = finMin - inicioMin;
+
+    if(diff < 0) diff += 1440; // por si acaso
+
+    let horas = Math.floor(diff / 60);
+    let minutos = diff % 60;
+
+    return `${horas}h ${minutos}m`;
+}
 
 
 // 🧩 EJEMPLO CORRECTO
@@ -1132,16 +1163,27 @@ function pintarGraficaHoras(mejorInicio, mejorFin, desc){
         type:'line',
         data:{
             labels: horas, // ✅ CORREGIDO
-            datasets:[{
-                data: valores,
-                borderColor:"#22c55e",
-                backgroundColor:"rgba(34,197,94,0.1)",
-                fill:true,
-                tension:0.5,
-                borderWidth:3,
-                pointRadius:(c)=> c.dataIndex === indicePico ? 5 : 0,
-                pointBackgroundColor:"#ffffff"
-            }]
+            datasets:[
+{
+    data: valores,
+    borderColor:"#22c55e",
+    backgroundColor:"rgba(34,197,94,0.1)",
+    fill:true,
+    tension:0.5,
+    borderWidth:3,
+    pointRadius:(c)=> c.dataIndex === indicePico ? 5 : 0,
+    pointBackgroundColor:"#ffffff"
+},
+{
+    type:'line',
+    data: Array(valores.length).fill(maxAyer),
+    borderColor:"#ffffff",
+    borderWidth:1,
+    pointRadius:0,
+    fill:false,
+    borderDash:[4,4]
+}
+]
         },
         options:{
             responsive:true,
@@ -1470,21 +1512,27 @@ function actualizarTextoPico(labels, valores, indicePico){
     let tuPotenciaW = potenciaActual * coef;
     let tuPotenciaKW = tuPotenciaW / 1000;
 
-    let inicioHora = labels[0] || "--";
-    let finHora = labels[valores.length - 1] || "--";
+    let inicioHora = inicioReal;
+    let finHora = finReal;
+
+    let duracion = calcularDuracion(inicioHora, finHora);
 
     picoEl.innerHTML = `
     <span class="picoTexto">
 
-    ⚡ Producción: ☀️ <b>${inicioHora}</b> → 🌙 <b>${finHora}</b>
+   ⚡ Producción: ☀️ <b>${inicioHora}</b> → 🌙 <b>${finHora}</b> 
+   <span style="color:#facc15; font-weight:bold;">(${duracion})</span>
 
     <br>
 
-    ☀️ Pico Mas Alto de Hoy: 
-    <b>${labels[indicePico]}</b> 
-    <span style="color:#facc15; font-weight:bold;">
-    (${valores[indicePico]} kW)
-    </span>
+☀️ Pico Mas Alto de Hoy: 
+<b>${labels[indicePico]}</b> 
+<span style="color:#facc15; font-weight:bold;">
+(${valores[indicePico]} kW)
+</span>
+<span style="color:#ffffff; font-weight:bold;">
+ - Ayer: (${maxAyerGlobal} kW)
+</span>
 
     <br>
 
@@ -1581,8 +1629,8 @@ window.onload=async()=>{
 
 setTimeout(()=>{
     tiempoReal();
-    setInterval(tiempoReal,60000);
-    setInterval(graficaPotenciaReal,60000);
+    setInterval(tiempoReal,30000);
+    setInterval(graficaPotenciaReal,30000);
 },500);
 
 
