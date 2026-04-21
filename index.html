@@ -428,9 +428,9 @@ canvas{
 <body>
 
 <div class="container">
-
 <div class="header">☀️ SolarCRIS</div>
 <div class="header">👥 Instalación Colectiva La Viña 2</div>
+<div id="consumo">-- W</div>
 <div class="topBar">
     <div>Desarrollador Cristóbal Jiménez V.6</div>
     <div id="horaUpdate">--</div>
@@ -1453,6 +1453,27 @@ datalabels:{
         console.error(err);
     }
 }
+
+// MI CONSUMO DE CASA CON SHELLY
+async function obtenerConsumo() {
+  const res = await fetch("http://homeassistant.hadecris.win:8123/api/states/sensor.medidor_de_casa_power", {
+    headers: {
+      Authorization: "Bearer eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiIwNDI2OWJkYzBmYTc0MTcwOWNkYjE1ODk1OWZjOTg0MyIsImlhdCI6MTc3NjgwOTgyNiwiZXhwIjoyMDkyMTY5ODI2fQ.3Oz7nKhyfiRYEAuWGkrNyQp9_2T6n7o7nvjwdqErpuo"
+    }
+  });
+
+  const data = await res.json();
+  return parseFloat(data.state);
+}
+
+async function actualizarConsumo() {
+  const consumo = await obtenerConsumo();
+
+  document.getElementById("consumo").innerText =
+    consumo.toFixed(0) + " W";
+}
+
+setInterval(actualizarConsumo, 3000);
 
 
 // GRAFICA MENSUAL
