@@ -1467,10 +1467,21 @@ async function obtenerConsumo() {
 }
 
 async function actualizarConsumo() {
-  const consumo = await obtenerConsumo();
+  try {
+    const consumo = await obtenerConsumo();
 
-  document.getElementById("consumo").innerText =
-    consumo.toFixed(0) + " W";
+    if (!consumo || isNaN(consumo)) {
+      document.getElementById("consumo").innerText = "Sin datos";
+      return;
+    }
+
+    document.getElementById("consumo").innerText =
+      consumo.toFixed(0) + " W";
+
+  } catch (error) {
+    console.error("Error consumo:", error);
+    document.getElementById("consumo").innerText = "Error conexión";
+  }
 }
 
 setInterval(actualizarConsumo, 3000);
