@@ -431,6 +431,7 @@ canvas{
 <div class="header">☀️ SolarCRIS</div>
 <div class="header">👥 Instalación Colectiva La Viña 2</div>
 <div id="consumo">-- W</div>
+<div id="estadoEnergia">--</div>
 <div class="topBar">
     <div>Desarrollador Cristóbal Jiménez V.7</div>
     <div id="horaUpdate">--</div>
@@ -1456,31 +1457,58 @@ datalabels:{
 
 // MI CONSUMO DE CASA CON SHELLY
 async function obtenerConsumo() {
-  const res = await fetch("https://homeassistant.hadecris.win/api/states/sensor.medidor_de_casa_power", {
-    headers: {
-      Authorization: "Bearer eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiIwNDI2OWJkYzBmYTc0MTcwOWNkYjE1ODk1OWZjOTg0MyIsImlhdCI6MTc3NjgwOTgyNiwiZXhwIjoyMDkyMTY5ODI2fQ.3Oz7nKhyfiRYEAuWGkrNyQp9_2T6n7o7nvjwdqErpuo"
-    }
-  });
+  try {
+    const res = await fetch("https://homeassistant.hadecris.win/api/states/sensor.medidor_de_casa_power", {
+      headers: {
+        Authorization: "Bearer eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiIwNDI2OWJkYzBmYTc0MTcwOWNkYjE1ODk1OWZjOTg0MyIsImlhdCI6MTc3NjgwOTgyNiwiZXhwIjoyMDkyMTY5ODI2fQ.3Oz7nKhyfiRYEAuWGkrNyQp9_2T6n7o7nvjwdqErpuo"
+      }
+    });
 
-  const data = await res.json();
-  return parseFloat(data.state);
+    if (!res.ok) return null;
+
+    const data = await res.json();
+
+    if (!data.state || data.state === "unknown") return null;
+
+    return parseFloat(data.state);
+
+  } catch (error) {
+    return null;
+  }
 }
 
 async function actualizarConsumo() {
   try {
     const consumo = await obtenerConsumo();
 
-    if (!consumo || isNaN(consumo)) {
-      document.getElementById("consumo").innerText = "Sin datos";
+    const produccion = window.produccionSolar || 0;
+
+    if (consumo === null) {
+      document.getElementById("consumo").innerText = "No disponible";
+      document.getElementById("estadoEnergia").innerText = "Sin medidor";
       return;
     }
 
     document.getElementById("consumo").innerText =
       consumo.toFixed(0) + " W";
 
+    let estado = "";
+    let color = "";
+
+    if (produccion >= consumo) {
+      estado = "☀️ Energía Solar";
+      color = "green";
+    } else {
+      estado = "⚡ Consumo de Red";
+      color = "red";
+    }
+
+    document.getElementById("estadoEnergia").innerText = estado;
+    document.getElementById("consumo").style.color = color;
+
   } catch (error) {
-    console.error("Error consumo:", error);
-    document.getElementById("consumo").innerText = "Error conexión";
+    console.error("ERROR REAL:", error); // 👈 CLAVE
+    document.getElementById("consumo").innerText = "Error";
   }
 }
 
