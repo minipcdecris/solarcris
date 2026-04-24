@@ -430,10 +430,9 @@ canvas{
 <div class="container">
 <div class="header">☀️ SolarCRIS</div>
 <div class="header">👥 Instalación Colectiva La Viña 2</div>
-<div id="consumo">-- W</div>
-<div id="estadoEnergia">--</div>
+
 <div class="topBar">
-    <div>Desarrollador Cristóbal Jiménez V.7</div>
+    <div>Desarrollador Cristóbal Jiménez V.8</div>
     <div id="horaUpdate">--</div>
 </div>
 
@@ -1480,34 +1479,42 @@ async function obtenerConsumo() {
 async function actualizarConsumo() {
   try {
     const consumo = await obtenerConsumo();
-
     const produccion = window.produccionSolar || 0;
+    const consumoEl = document.getElementById("consumo");
+    const estadoEl = document.getElementById("estadoEnergia");
+    
+
+    if (!consumoEl || !estadoEl) return;
 
     if (consumo === null) {
-      document.getElementById("consumo").innerText = "No disponible";
-      document.getElementById("estadoEnergia").innerText = "Sin medidor";
+      consumoEl.innerText = "No disponible";
+      estadoEl.innerText = "Sin medidor";
       return;
     }
 
-    document.getElementById("consumo").innerText =
-      consumo.toFixed(0) + " W";
+    // 🔥 CÁLCULOS
+    const autoconsumo = Math.min(consumo, tuPotenciaW);
+    const consumoRed = Math.max(consumo - tuPotenciaW, 0);
+    const excedente = Math.max(tuPotenciaW - consumo, 0);
 
-    let estado = "";
-    let color = "";
+    // 🎨 COLOR PRINCIPAL
+    let color = produccion >= consumo ? "#22c55e" : "#ef4444";
 
-    if (produccion >= consumo) {
-      estado = "☀️ Energía Solar";
-      color = "green";
-    } else {
-      estado = "⚡ Consumo de Red";
-      color = "red";
-    }
+    // 🧾 TEXTO FINAL
+    
+    // ❌ ya no pintamos nada arriba
+    consumoEl.innerHTML = "";
 
-    document.getElementById("estadoEnergia").innerText = estado;
-    document.getElementById("consumo").style.color = color;
+    // 🧠 ESTADO
+    let estado = produccion >= consumo
+      ? "☀️ Energía Solar"
+      : "⚡ Consumo de Red";
+
+    estadoEl.innerText = estado;
+    consumoEl.style.color = color;
 
   } catch (error) {
-    console.error("ERROR REAL:", error); // 👈 CLAVE
+    console.error("ERROR REAL:", error);
     document.getElementById("consumo").innerText = "Error";
   }
 }
@@ -1562,10 +1569,18 @@ async function cargarDatosMensuales(){
     dibujarGraficaMensual(labels, valores);
 }
 
-function actualizarTextoPico(labels, valores, indicePico){
+async function actualizarTextoPico(labels, valores, indicePico){
 
     let picoEl = document.getElementById("picoHora");
     if(!picoEl) return;
+
+        // 🔥 AÑADE ESTO
+    const consumo = await obtenerConsumo();
+    const produccion = potenciaActual * (1.27 / 100) || 0;
+
+    const autoconsumo = Math.min(consumo || 0, produccion);
+    const consumoRed = Math.max((consumo || 0) - produccion, 0);
+    const excedente = Math.max(produccion - (consumo || 0), 0);
 
     let coef = 1.27 / 100;
 
@@ -1594,16 +1609,43 @@ function actualizarTextoPico(labels, valores, indicePico){
  - Ayer: (${maxAyerGlobal} kW)
 </span>
 
-    <br>
+<br>
 
-    ⚡ Ahora Estas Obteniendo: 
-    <b>${tuPotenciaKW.toFixed(2)} kW</b> 
-    <span style="color:#facc15; font-weight:bold;">
-    (${Math.round(tuPotenciaW)} W)
-    </span>
+⚡ Ahora Estas Obteniendo: 
+<b>${tuPotenciaKW.toFixed(2)} kW</b> 
+<span style="color:#facc15; font-weight:bold;">
+(${Math.round(tuPotenciaW)} W)
+</span>
 
-    </span>
-    `;
+<br>
+
+<div id="bloqueEnergia">
+
+🗼 Consumo de Red: 
+<b style="color:#ef4444">${consumoRed?.toFixed(0) || 0} W</b>
+
+<br>
+
+🔋 Autoconsumo: 
+<b style="color:#22c55e">${autoconsumo?.toFixed(0) || 0} W</b>
+
+<br>
+
+📤 Excedente: 
+<b style="color:#3b82f6">${excedente?.toFixed(0) || 0} W</b>
+
+</div>
+
+</span>
+`;
+// 🔥 JUSTO AQUÍ 👇
+const bloque = document.getElementById("bloqueEnergia");
+
+if (consumo === null) {
+  if (bloque) bloque.style.display = "none";
+} else {
+  if (bloque) bloque.style.display = "block";
+}
 }
 
 function dibujarGraficaMensual(labels,valores){
