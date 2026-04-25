@@ -504,7 +504,7 @@ canvas{
 
 
     <div class="consumoBox">
-        <div class="title">🕒 Mejores Horas de Hoy para Consumir Electricidad</div>
+        <div class="title">🕒 Datos en Tiempo Real de Hoy</div>
         
         <div id="horasConsumo" class="consumoTexto"></div>
 
@@ -572,6 +572,14 @@ let maxAyerGlobal = 0;
 
 let inicioReal = "--";
 let finReal = "--";
+
+let acumuladoRed = 0;
+let acumuladoAutoconsumo = 0;
+let acumuladoExcedente = 0;
+let acumuladoProduccion = 0;
+
+let ultimoTiempoEnergia = Date.now();
+let ultimoDiaEnergia = new Date().getDate();
 
 // 🔥 activar datalabels
 Chart.register(ChartDataLabels);
@@ -1096,6 +1104,18 @@ function calcularDuracion(inicio, fin){
     return `${horas}h ${minutos}m`;
 }
 
+function resetEnergiaDiaria() {
+    const hoy = new Date().getDate();
+
+    if (hoy !== ultimoDiaEnergia) {
+        acumuladoProduccion = 0;
+        acumuladoRed = 0;
+        acumuladoAutoconsumo = 0;
+        acumuladoExcedente = 0;
+
+        ultimoDiaEnergia = hoy;
+    }
+}
 
 // 🧩 EJEMPLO CORRECTO
 function pintarGraficaHoras(mejorInicio, mejorFin, desc){
@@ -1497,6 +1517,17 @@ async function actualizarConsumo() {
     const consumoRed = Math.max(consumo - tuPotenciaW, 0);
     const excedente = Math.max(tuPotenciaW - consumo, 0);
 
+    resetEnergiaDiaria();
+
+    let ahoraEnergia = Date.now();
+    let segundos = (ahoraEnergia - ultimoTiempoEnergia) / 1000;
+    ultimoTiempoEnergia = ahoraEnergia;
+
+    acumuladoProduccion += (tuPotenciaW * segundos) / 3600000;
+    acumuladoRed += (consumoRed * segundos) / 3600000;
+    acumuladoAutoconsumo += (autoconsumo * segundos) / 3600000;
+    acumuladoExcedente += (excedente * segundos) / 3600000;
+
     // 🎨 COLOR PRINCIPAL
     let color = produccion >= consumo ? "#22c55e" : "#ef4444";
 
@@ -1596,13 +1627,13 @@ async function actualizarTextoPico(labels, valores, indicePico){
     <span class="picoTexto">
 
    ⚡ Producción: ☀️ <b>${inicioHora}</b> → 🌙 <b>${finHora}</b> 
-   <span style="color:#facc15; font-weight:bold;">(${duracion})</span>
+   <span style="color:#facc55; font-weight:bold;">(${duracion})</span>
 
     <br>
 
 ☀️ Pico Alto de Hoy: 
 <b>${labels[indicePico]}</b> 
-<span style="color:#facc15; font-weight:bold;">
+<span style="color:#22c55e; font-weight:bold;">
 (${valores[indicePico]} kW)
 </span>
 <span style="color:#ffffff; font-weight:bold;">
@@ -1611,32 +1642,42 @@ async function actualizarTextoPico(labels, valores, indicePico){
 
 <br>
 
+<div id="bloqueEnergia">
+
 ⚡ Ahora Estas Obteniendo: 
-<b>${tuPotenciaKW.toFixed(2)} kW</b> 
-<span style="color:#facc15; font-weight:bold;">
-(${Math.round(tuPotenciaW)} W)
+<b style="color:#facc15">${Math.round(tuPotenciaW)} W</b>
+<span>
+<b style="color:#facc15">(Hoy: ${acumuladoProduccion.toFixed(2)} kWh)</b>
 </span>
 
 <br>
 
-<div id="bloqueEnergia">
 
-🗼 Consumo de Red: 
-<b style="color:#ef4444">${consumoRed?.toFixed(0) || 0} W</b>
+🗼 Red: 
+<b style="color:#ef4444">${consumoRed.toFixed(0)} W</b>
+<span>
+<b style="color:#ef4444">(Hoy: ${acumuladoRed.toFixed(2)} kWh)</b>
+</span>
 
 <br>
 
 🔋 Autoconsumo: 
-<b style="color:#22c55e">${autoconsumo?.toFixed(0) || 0} W</b>
+<b style="color:#22c55e">${autoconsumo.toFixed(0)} W</b>
+<span>
+<b style="color:#22c55e">(Hoy: ${acumuladoAutoconsumo.toFixed(2)} kWh)</b>
+</span>
 
 <br>
 
 📤 Excedente: 
-<b style="color:#3b82f6">${excedente?.toFixed(0) || 0} W</b>
+<b style="color:#3b82f6">${excedente.toFixed(0)} W</b>
+<span>
+<b style="color:#3b82f6">(Hoy: ${acumuladoExcedente.toFixed(2)} kWh)</b>
+</span>
 
 </div>
 
-</span>
+
 `;
 // 🔥 JUSTO AQUÍ 👇
 const bloque = document.getElementById("bloqueEnergia");
