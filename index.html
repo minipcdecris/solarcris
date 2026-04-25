@@ -432,7 +432,7 @@ canvas{
 <div class="header">👥 Instalación Colectiva La Viña 2</div>
 
 <div class="topBar">
-    <div>Desarrollador Cristóbal Jiménez V.8</div>
+    <div>Desarrollador Cristóbal Jiménez V.9</div>
     <div id="horaUpdate">--</div>
 </div>
 
@@ -1104,16 +1104,97 @@ function calcularDuracion(inicio, fin){
     return `${horas}h ${minutos}m`;
 }
 
-function resetEnergiaDiaria() {
-    const hoy = new Date().getDate();
+async function guardarEnergiaDiaria() {
 
-    if (hoy !== ultimoDiaEnergia) {
-        acumuladoProduccion = 0;
-        acumuladoRed = 0;
-        acumuladoAutoconsumo = 0;
-        acumuladoExcedente = 0;
+    try {
 
-        ultimoDiaEnergia = hoy;
+        let hoy = new Date();
+
+        let fechaHoy =
+        hoy.getFullYear() + "-" +
+        String(hoy.getMonth()+1).padStart(2,'0') + "-" +
+        String(hoy.getDate()).padStart(2,'0');
+
+        let duracion = calcularDuracion(inicioReal, finReal);
+
+        let picoHora = labelsGlobal[indicePicoGlobal] || "--";
+        let picoKw = valoresGlobal[indicePicoGlobal] || 0;
+
+        let consumoTotal = acumuladoRed + acumuladoAutoconsumo;
+
+        let autosuficiencia = 0;
+
+        if(consumoTotal > 0){
+            autosuficiencia = (acumuladoAutoconsumo / consumoTotal) * 100;
+        }
+
+        const { error } = await supabaseClient
+            .from("energia_diaria")
+            .upsert({
+                fecha: fechaHoy,
+
+                inicio_produccion: inicioReal,
+                fin_produccion: finReal,
+                duracion: duracion,
+
+                pico_hora: picoHora,
+                pico_kw: picoKw,
+                pico_ayer_kw: maxAyerGlobal,
+
+                produccion: acumuladoProduccion,
+                red: acumuladoRed,
+                autoconsumo: acumuladoAutoconsumo,
+                excedente: acumuladoExcedente,
+
+                consumo_total: consumoTotal,
+                autosuficiencia: autosuficiencia
+            });
+
+        if(error){
+            console.error("Error guardando energía:", error);
+        }else{
+            console.log("✅ Datos diarios guardados en Supabase");
+        }
+
+    } catch(error){
+        console.error("Error general:", error);
+    }
+}
+
+async function recuperarEnergiaHoy() {
+
+    try {
+
+        let hoy = new Date();
+
+        let fechaHoy =
+        hoy.getFullYear() + "-" +
+        String(hoy.getMonth()+1).padStart(2,'0') + "-" +
+        String(hoy.getDate()).padStart(2,'0');
+
+        const { data, error } = await supabaseClient
+            .from("energia_diaria")
+            .select("*")
+            .eq("fecha", fechaHoy)
+            .single();
+
+        if(error || !data){
+            console.log("No hay datos guardados hoy todavía");
+            return;
+        }
+
+        acumuladoProduccion = Number(data.produccion || 0);
+        acumuladoRed = Number(data.red || 0);
+        acumuladoAutoconsumo = Number(data.autoconsumo || 0);
+        acumuladoExcedente = Number(data.excedente || 0);
+
+        console.log("✅ Datos recuperados desde Supabase");
+        console.log("DATA SUPABASE:", data);
+        console.log("Producción recuperada:", data.autoconsumo);
+        console.log("acumuladoProduccion:", acumuladoProduccion);
+
+    } catch(error){
+        console.log("Sin datos previos hoy");
     }
 }
 
@@ -1551,7 +1632,7 @@ async function actualizarConsumo() {
 }
 
 setInterval(actualizarConsumo, 3000);
-
+setInterval(() => {guardarEnergiaDiaria();}, 3000);
 
 // GRAFICA MENSUAL
 async function cargarDatosMensuales(){
@@ -1762,12 +1843,14 @@ function dibujarGraficaMensual(labels,valores){
 
 // INIT
 window.onload=async()=>{
+    await recuperarEnergiaHoy();
     await tiempoReal();
     await cargarTotales();
     await grafica();
     await cargarDatosMensuales();
     await cargarTiempo(); // 🔥 ESTA LÍNEA
     await graficaPotenciaReal();
+    await guardarEnergiaDiaria();
 };
 
 setTimeout(()=>{
