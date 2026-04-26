@@ -25,9 +25,7 @@ body{
     max-width:1200px;
     margin:auto;
     padding:10px;
-        /* 🔥 SOLUCIÓN IPHONE */
     padding-top: calc(env(safe-area-inset-top) + 10px);
-    <div id="loaderSolar" class="loaderSolar">⟳</div>
 }
 
 body{
@@ -309,7 +307,7 @@ canvas{
 }
 
 .cardCenter .subTexto{
-    font-size:px !important;
+    font-size:12px !important;
     color:#facc15;
 }
 
@@ -401,7 +399,7 @@ canvas{
 
 #mejorMes{
     color:#ffffff;
-    font-size:15como es px;
+    font-size:15px;
 }
 
 #weatherIcon img{
@@ -427,12 +425,13 @@ canvas{
 
 <body>
 
+<div id="loaderSolar" class="loaderSolar">⟳</div>    
 <div class="container">
 <div class="header">☀️ SolarCRIS</div>
 <div class="header">👥 Instalación Colectiva La Viña 2</div>
 
 <div class="topBar">
-    <div>Desarrollador Cristóbal Jiménez V.9</div>
+    <div>Desarrollador Cristóbal Jiménez V.10</div>
     <div id="horaUpdate">--</div>
 </div>
 
@@ -1070,9 +1069,6 @@ function calcularHorasConsumo(desc){
     despuesInicio = mejorFin;
     despuesFin = mejorFin + 2;
 
-    function h(hora){
-        return horas[val];
-    }
 
     const el = document.getElementById("horasConsumo");
 
@@ -1080,8 +1076,7 @@ function calcularHorasConsumo(desc){
 el.innerHTML = "";
     }
 
-    // 🔥 AÑADIDO CLAVE → dibujar gráfica
-    pintarGraficaHoras(mejorInicio, mejorFin, desc);
+        
 }
 
 function calcularDuracion(inicio, fin){
@@ -1102,6 +1097,23 @@ function calcularDuracion(inicio, fin){
     let minutos = diff % 60;
 
     return `${horas}h ${minutos}m`;
+}
+
+function resetEnergiaDiaria(){
+
+    let hoy = new Date().getDate();
+
+    if(hoy !== ultimoDiaEnergia){
+
+        acumuladoRed = 0;
+        acumuladoAutoconsumo = 0;
+        acumuladoExcedente = 0;
+        acumuladoProduccion = 0;
+
+        ultimoDiaEnergia = hoy;
+
+        console.log("🔄 Reinicio diario completado");
+    }
 }
 
 async function guardarEnergiaDiaria() {
@@ -1188,141 +1200,15 @@ async function recuperarEnergiaHoy() {
         acumuladoAutoconsumo = Number(data.autoconsumo || 0);
         acumuladoExcedente = Number(data.excedente || 0);
 
-        console.log("✅ Datos recuperados desde Supabase");
-        console.log("DATA SUPABASE:", data);
-        console.log("Producción recuperada:", data.autoconsumo);
-        console.log("acumuladoProduccion:", acumuladoProduccion);
+
 
     } catch(error){
         console.log("Sin datos previos hoy");
     }
 }
 
-// 🧩 EJEMPLO CORRECTO
-function pintarGraficaHoras(mejorInicio, mejorFin, desc){
 
-    desc = desc || "";
 
-    const picoEl = document.getElementById("picoHora");
-
-    let horas = [];
-    let valores = [];
-
-    let centro = (mejorInicio + mejorFin) / 2;
-
-    let maxValor = 0;
-    let indicePico = 0;
-
-    // 🔥 GENERAR DATOS
-    for(let h=8; h<=20; h++){
-
-        horas.push(h);
-
-        let valor;
-
-        if(desc.toLowerCase().includes("lluvia")){
-            valor = Math.random() * 2 + 0.5;
-        }
-        else if(desc.toLowerCase().includes("nube")){
-            valor = Math.exp(-Math.pow((h - centro)/1.4, 2)) * 55;
-        }
-        else{
-            valor = Math.exp(-Math.pow((h - centro)/1.6, 2)) * 130;
-        }
-
-        // 🔥 ajustar según potencia real
-        if(potenciaActual < 200){
-            valor *= 0.3;
-        }
-
-        valores.push(valor);
-
-        if(valor > maxValor){
-            maxValor = valor;
-            indicePico = horas.length - 1;
-        }
-    }
-
-    // 🔥 TEXTO PICO
-    if(picoEl){
-        if(desc.toLowerCase().includes("lluvia")){
-            picoEl.innerHTML = "⚠️ Producción muy baja hoy";
-        }else{
-            picoEl.innerHTML = "⭐ Mejor hora: <b>" + horas[indicePico] + ":00</b>";
-        }
-    }
-
-    const canvas = document.getElementById("graficaHoras");
-    if(!canvas) return;
-
-    const ctx = canvas.getContext("2d");
-
-    if(window.chartHoras) window.chartHoras.destroy();
-
-    // 🔥 CREAR GRÁFICA
-    window.chartHoras = new Chart(ctx,{
-        type:'line',
-        data:{
-            labels: horas, // ✅ CORREGIDO
-            datasets:[
-{
-    data: valores,
-    borderColor:"#22c55e",
-    backgroundColor:"rgba(34,197,94,0.1)",
-    fill:true,
-    tension:0.5,
-    borderWidth:3,
-    pointRadius:(c)=> c.dataIndex === indicePico ? 5 : 0,
-    pointBackgroundColor:"#ffffff"
-},
-{
-    type:'line',
-    data: Array(valores.length).fill(maxAyer),
-    borderColor:"#ffffff",
-    borderWidth:1,
-    pointRadius:0,
-    fill:false,
-    borderDash:[4,4]
-}
-]
-        },
-        options:{
-            responsive:true,
-            maintainAspectRatio:false,
-
-            layout:{
-                padding:{ top:20 }
-            },
-
-            plugins:{
-                legend:{display:false},
-                tooltip:{enabled:true},
-                datalabels:{ display:false }
-            },
-
-            scales:{
-                x:{
-                    grid:{display:false},
-                    ticks:{
-                        color:"#ffffff",
-                        maxTicksLimit:6
-                    }
-                },
-                y:{
-                    display:true,
-                    ticks:{
-                        color:"#ffffff",
-                        maxTicksLimit:4,
-                        callback:(v)=> Math.round(v) + " kW"
-                    },
-                    grid:{
-                        color:"rgba(255,255,255,0.05)"
-                    }
-                }
-            }
-        }
-    });
-}
 
 async function tiempoReal(){
 
@@ -1581,11 +1467,13 @@ async function actualizarConsumo() {
   try {
     const consumo = await obtenerConsumo();
     const produccion = window.produccionSolar || 0;
-    const consumoEl = document.getElementById("consumo");
-    const estadoEl = document.getElementById("estadoEnergia");
+//    const consumoEl = document.getElementById("consumo");
+//    const estadoEl = document.getElementById("estadoEnergia");
     
+    const coef = 1.27 / 100;
+    const tuPotenciaW = potenciaActual * coef;
 
-    if (!consumoEl || !estadoEl) return;
+//    if (!consumoEl || !estadoEl) return;
 
     if (consumo === null) {
       consumoEl.innerText = "No disponible";
@@ -1615,15 +1503,15 @@ async function actualizarConsumo() {
     // 🧾 TEXTO FINAL
     
     // ❌ ya no pintamos nada arriba
-    consumoEl.innerHTML = "";
+    //consumoEl.innerHTML = "";
 
     // 🧠 ESTADO
     let estado = produccion >= consumo
       ? "☀️ Energía Solar"
       : "⚡ Consumo de Red";
 
-    estadoEl.innerText = estado;
-    consumoEl.style.color = color;
+    //estadoEl.innerText = estado;
+    //consumoEl.style.color = color;
 
   } catch (error) {
     console.error("ERROR REAL:", error);
@@ -1632,7 +1520,7 @@ async function actualizarConsumo() {
 }
 
 setInterval(actualizarConsumo, 3000);
-setInterval(() => {guardarEnergiaDiaria();}, 3000);
+setInterval(() => {guardarEnergiaDiaria();}, 300000);
 
 // GRAFICA MENSUAL
 async function cargarDatosMensuales(){
