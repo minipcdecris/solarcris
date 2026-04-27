@@ -440,6 +440,7 @@ canvas{
 <div id="loaderSolar" class="loaderSolar">⟳</div>  
 
 <div id="loginScreen" style="
+overflow:hidden;
 position:fixed;
 top:0;
 left:0;
@@ -1844,12 +1845,14 @@ function loginSolarCRIS(){
     if(pass === passwordAdmin){
 
         localStorage.setItem("modoSolarCRIS", "admin");
+        document.body.style.overflow = "auto";
         location.reload();
     }
 
     else if(pass === passwordGeneral){
 
         localStorage.setItem("modoSolarCRIS", "normal");
+        document.body.style.overflow = "auto";
         location.reload();
     }
 
@@ -1868,8 +1871,12 @@ function logoutSolarCRIS(){
 window.onload=async()=>{
 
     window.scrollTo(0, 0);
-    
+
     const modo = localStorage.getItem("modoSolarCRIS");
+
+    if(modo !== "admin" && modo !== "normal"){
+    document.body.style.overflow = "hidden";
+    }
 
     if(modo === "admin" || modo === "normal"){
     document.getElementById("loginScreen").style.display = "none";
