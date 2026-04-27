@@ -441,6 +441,7 @@ canvas{
 
 <div id="loginScreen" style="
 overflow:hidden;
+touch-action:none;
 position:fixed;
 top:0;
 left:0;
@@ -1846,6 +1847,8 @@ function loginSolarCRIS(){
 
         localStorage.setItem("modoSolarCRIS", "admin");
         document.body.style.overflow = "auto";
+        document.body.classList.remove("login-activo");
+        document.documentElement.classList.remove("login-activo");
         location.reload();
     }
 
@@ -1853,6 +1856,8 @@ function loginSolarCRIS(){
 
         localStorage.setItem("modoSolarCRIS", "normal");
         document.body.style.overflow = "auto";
+        document.body.classList.remove("login-activo");
+        document.documentElement.classList.remove("login-activo");
         location.reload();
     }
 
@@ -1874,9 +1879,10 @@ window.onload=async()=>{
 
     const modo = localStorage.getItem("modoSolarCRIS");
 
-    if(modo !== "admin" && modo !== "normal"){
-    document.body.style.overflow = "hidden";
-    }
+if(modo !== "admin" && modo !== "normal"){
+    document.body.classList.add("login-activo");
+    document.documentElement.classList.add("login-activo");
+}
 
     if(modo === "admin" || modo === "normal"){
     document.getElementById("loginScreen").style.display = "none";
