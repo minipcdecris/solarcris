@@ -321,7 +321,19 @@ canvas{
     box-sizing:border-box;
 }
 
+.solGirando{
+    display:inline-block;
+    animation:girarSol 6s linear infinite;
+}
 
+@keyframes girarSol{
+    from{
+        transform:rotate(0deg);
+    }
+    to{
+        transform:rotate(360deg);
+    }
+}
 
 /* 🔥 NAV */
 .nav{
@@ -425,13 +437,90 @@ canvas{
 
 <body>
 
-<div id="loaderSolar" class="loaderSolar">⟳</div>    
+<div id="loaderSolar" class="loaderSolar">⟳</div>  
+
+<div id="loginScreen" style="
+position:fixed;
+top:0;
+left:0;
+width:100%;
+height:100%;
+background:#020617;
+display:flex;
+justify-content:center;
+align-items:center;
+z-index:99999;
+">
+
+    <div style="
+        background:#1e293b;
+        padding:25px;
+        border-radius:16px;
+        text-align:center;
+        width:300px;
+        max-width:90%;
+    ">
+
+        <h2>☀️ SolarCRIS</h2>
+
+        <input
+            type="password"
+            id="passwordInput"
+            placeholder="Introduce contraseña"
+            style="
+                width:100%;
+                padding:10px;
+                margin-top:10px;
+                border-radius:8px;
+                border:none;
+            "
+        >
+
+        <button onclick="loginSolarCRIS()" style="
+            margin-top:15px;
+            width:100%;
+            padding:10px;
+            background:#22c55e;
+            color:white;
+            border:none;
+            border-radius:8px;
+            cursor:pointer;
+        ">
+            Entrar
+        </button>
+
+        <div id="loginError" style="
+            color:red;
+            margin-top:10px;
+            font-size:14px;
+        "></div>
+
+    </div>
+
+</div>
+
 <div class="container">
-<div class="header">☀️ SolarCRIS</div>
+<div class="header">
+    <span class="solGirando">☀️</span> SolarCRIS
+</div>
 <div class="header">👥 Instalación Colectiva La Viña 2</div>
 
+<div style="text-align:center; margin-bottom:10px;">
+    <button onclick="logoutSolarCRIS()" style="
+        background:#ef4444;
+        color:white;
+        border:none;
+        padding:6px 12px;
+        border-radius:8px;
+        cursor:pointer;
+        font-size:12px;
+    ">
+        Cerrar sesión
+    </button>
+</div>
+
 <div class="topBar">
-    <div>Desarrollador Cristóbal Jiménez V.11</div>
+    <div>Desarrollador Cristóbal Jiménez V.12</div>
     <div id="horaUpdate">--</div>
 </div>
 
@@ -1592,14 +1681,15 @@ async function actualizarTextoPico(labels, valores, indicePico){
 
     let duracion = calcularDuracion(inicioHora, finHora);
 
-const esAdmin = localStorage.getItem("adminSolarCRIS") === "true";
-//const esAdmin = true;
+    const esAdmin = localStorage.getItem("modoSolarCRIS") === "admin";
 
 let bloquePrivado = "";
 
 if(esAdmin){
     bloquePrivado = `
-    
+
+    <br>
+
     🗼 Red: 
     <b style="color:#ef4444">${consumoRed.toFixed(0)} W</b>
     <span>
@@ -1624,25 +1714,26 @@ if(esAdmin){
     `;
 }
 
-picoEl.innerHTML = `
-<span class="picoTexto">
+    picoEl.innerHTML = `
+    <span class="picoTexto">
 
-⚡ Producción: ☀️ <b>${inicioHora}</b> → 🌙 <b>${finHora}</b> 
-<span style="color:#facc55; font-weight:bold;">(${duracion})</span>
+   ⚡ Producción: ☀️ <b>${inicioHora}</b> → 🌙 <b>${finHora}</b> 
+   <span style="color:#facc55; font-weight:bold;">(${duracion})</span>
 
-<br>
+    <br>
 
 ☀️ Pico Alto de Hoy: 
 <b>${labels[indicePico]}</b> 
 <span style="color:#22c55e; font-weight:bold;">
 (${valores[indicePico]} kW)
 </span>
-
 <span style="color:#ffffff; font-weight:bold;">
  - Ayer: (${maxAyerGlobal} kW)
 </span>
 
 <br>
+
+<div id="bloqueEnergia">
 
 ⚡ Ahora Estas Obteniendo: 
 <b style="color:#facc15">${Math.round(tuPotenciaW)} W</b>
@@ -1650,11 +1741,12 @@ picoEl.innerHTML = `
 <b style="color:#facc15">(Hoy: ${acumuladoProduccion.toFixed(2)} kWh)</b>
 </span>
 
-<br>
-
 ${bloquePrivado}
-`;
 
+</div>
+
+
+`;
 // 🔥 JUSTO AQUÍ 👇
 const bloque = document.getElementById("bloqueEnergia");
 
@@ -1736,23 +1828,43 @@ function dibujarGraficaMensual(labels,valores){
 
 }// ✅ ESTA LLAVE FALTABA
 
-// MODO ADMIN POR URL
-const params = new URLSearchParams(window.location.search);
-const adminValue = params.get("admin");
+function loginSolarCRIS(){
 
-if(adminValue){
+    const pass = document.getElementById("passwordInput").value;
 
-    if(adminValue === "off"){
-        localStorage.removeItem("adminSolarCRIS");
-        console.log("Modo admin desactivado");
-    } 
-    else {
-        localStorage.setItem("adminSolarCRIS", "true");
-        console.log("Modo admin activado");
+    const passwordAdmin = "cris2026";
+    const passwordGeneral = "vecinos";
+
+    if(pass === passwordAdmin){
+
+        localStorage.setItem("modoSolarCRIS", "admin");
+        document.getElementById("loginScreen").style.display = "none";
+    }
+
+    else if(pass === passwordGeneral){
+
+        localStorage.setItem("modoSolarCRIS", "normal");
+        document.getElementById("loginScreen").style.display = "none";
+    }
+
+    else{
+        document.getElementById("loginError").innerText = "Contraseña incorrecta";
     }
 }
 
+function logoutSolarCRIS(){
+
+    localStorage.removeItem("modoSolarCRIS");
+    location.reload();
+}
+
+// INIT
 window.onload=async()=>{
+    const modo = localStorage.getItem("modoSolarCRIS");
+
+    if(modo === "admin" || modo === "normal"){
+    document.getElementById("loginScreen").style.display = "none";
+    }
     await recuperarEnergiaHoy();
     await tiempoReal();
     await cargarTotales();
