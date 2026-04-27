@@ -461,14 +461,14 @@ z-index:99999;
         max-width:90%;
     ">
 
-        <h2>☀️ SolarCRIS</h2>
-
+        <h2><span class="solGirando">☀️</span> SolarCRIS</h2>
+        
         <input
             type="password"
             id="passwordInput"
             placeholder="Introduce contraseña"
             style="
-                width:100%;
+                width:90%;
                 padding:10px;
                 margin-top:10px;
                 border-radius:8px;
@@ -477,8 +477,8 @@ z-index:99999;
         >
 
         <button onclick="loginSolarCRIS()" style="
-            margin-top:15px;
-            width:100%;
+            margin-top:20px;
+            width:60%;
             padding:10px;
             background:#22c55e;
             color:white;
@@ -494,7 +494,7 @@ z-index:99999;
             margin-top:10px;
             font-size:14px;
         "></div>
-
+        <div style="font-size:12px;">Desarrollador Cristóbal Jiménez V.12</div>
     </div>
 
 </div>
@@ -1838,13 +1838,13 @@ function loginSolarCRIS(){
     if(pass === passwordAdmin){
 
         localStorage.setItem("modoSolarCRIS", "admin");
-        document.getElementById("loginScreen").style.display = "none";
+        location.reload();
     }
 
     else if(pass === passwordGeneral){
 
         localStorage.setItem("modoSolarCRIS", "normal");
-        document.getElementById("loginScreen").style.display = "none";
+        location.reload();
     }
 
     else{
