@@ -1866,6 +1866,9 @@ function logoutSolarCRIS(){
 
 // INIT
 window.onload=async()=>{
+
+    window.scrollTo(0, 0);
+    
     const modo = localStorage.getItem("modoSolarCRIS");
 
     if(modo === "admin" || modo === "normal"){
