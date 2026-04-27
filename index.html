@@ -1736,7 +1736,22 @@ function dibujarGraficaMensual(labels,valores){
 
 }// ✅ ESTA LLAVE FALTABA
 
-// INIT
+// MODO ADMIN POR URL
+const params = new URLSearchParams(window.location.search);
+const adminValue = params.get("admin");
+
+if(adminValue){
+
+    if(adminValue === "off"){
+        localStorage.removeItem("adminSolarCRIS");
+        console.log("Modo admin desactivado");
+    } 
+    else {
+        localStorage.setItem("adminSolarCRIS", "true");
+        console.log("Modo admin activado");
+    }
+}
+
 window.onload=async()=>{
     await recuperarEnergiaHoy();
     await tiempoReal();
