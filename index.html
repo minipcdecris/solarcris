@@ -431,7 +431,7 @@ canvas{
 <div class="header">👥 Instalación Colectiva La Viña 2</div>
 
 <div class="topBar">
-    <div>Desarrollador Cristóbal Jiménez V.10</div>
+    <div>Desarrollador Cristóbal Jiménez V.11</div>
     <div id="horaUpdate">--</div>
 </div>
 
@@ -1592,6 +1592,48 @@ async function actualizarTextoPico(labels, valores, indicePico){
 
     let duracion = calcularDuracion(inicioHora, finHora);
 
+const esAdmin = localStorage.getItem("adminSolarCRIS") === "true";
+
+let bloquePrivado = "";
+
+if(esAdmin){
+    bloquePrivado = `
+    <div id="bloqueEnergia">
+
+    ⚡ Ahora Estas Obteniendo: 
+    <b style="color:#facc15">${Math.round(tuPotenciaW)} W</b>
+    <span>
+    <b style="color:#facc15">(Hoy: ${acumuladoProduccion.toFixed(2)} kWh)</b>
+    </span>
+
+    <br>
+
+    🗼 Red: 
+    <b style="color:#ef4444">${consumoRed.toFixed(0)} W</b>
+    <span>
+    <b style="color:#ef4444">(Hoy: ${acumuladoRed.toFixed(2)} kWh)</b>
+    </span>
+
+    <br>
+
+    🔋 Autoconsumo: 
+    <b style="color:#22c55e">${autoconsumo.toFixed(0)} W</b>
+    <span>
+    <b style="color:#22c55e">(Hoy: ${acumuladoAutoconsumo.toFixed(2)} kWh)</b>
+    </span>
+
+    <br>
+
+    📤 Excedente: 
+    <b style="color:#3b82f6">${excedente.toFixed(0)} W</b>
+    <span>
+    <b style="color:#3b82f6">(Hoy: ${acumuladoExcedente.toFixed(2)} kWh)</b>
+    </span>
+
+    </div>
+    `;
+}
+
     picoEl.innerHTML = `
     <span class="picoTexto">
 
@@ -1611,7 +1653,6 @@ async function actualizarTextoPico(labels, valores, indicePico){
 
 <br>
 
-<div id="bloqueEnergia">
 
 ⚡ Ahora Estas Obteniendo: 
 <b style="color:#facc15">${Math.round(tuPotenciaW)} W</b>
@@ -1621,31 +1662,7 @@ async function actualizarTextoPico(labels, valores, indicePico){
 
 <br>
 
-
-🗼 Red: 
-<b style="color:#ef4444">${consumoRed.toFixed(0)} W</b>
-<span>
-<b style="color:#ef4444">(Hoy: ${acumuladoRed.toFixed(2)} kWh)</b>
-</span>
-
-<br>
-
-🔋 Autoconsumo: 
-<b style="color:#22c55e">${autoconsumo.toFixed(0)} W</b>
-<span>
-<b style="color:#22c55e">(Hoy: ${acumuladoAutoconsumo.toFixed(2)} kWh)</b>
-</span>
-
-<br>
-
-📤 Excedente: 
-<b style="color:#3b82f6">${excedente.toFixed(0)} W</b>
-<span>
-<b style="color:#3b82f6">(Hoy: ${acumuladoExcedente.toFixed(2)} kWh)</b>
-</span>
-
-</div>
-
+${bloquePrivado}
 
 `;
 // 🔥 JUSTO AQUÍ 👇
