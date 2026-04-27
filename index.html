@@ -1598,16 +1598,7 @@ let bloquePrivado = "";
 
 if(esAdmin){
     bloquePrivado = `
-    <div id="bloqueEnergia">
-
-    ⚡ Ahora Estas Obteniendo: 
-    <b style="color:#facc15">${Math.round(tuPotenciaW)} W</b>
-    <span>
-    <b style="color:#facc15">(Hoy: ${acumuladoProduccion.toFixed(2)} kWh)</b>
-    </span>
-
-    <br>
-
+    
     🗼 Red: 
     <b style="color:#ef4444">${consumoRed.toFixed(0)} W</b>
     <span>
@@ -1629,30 +1620,28 @@ if(esAdmin){
     <span>
     <b style="color:#3b82f6">(Hoy: ${acumuladoExcedente.toFixed(2)} kWh)</b>
     </span>
-
-    </div>
     `;
 }
 
-    picoEl.innerHTML = `
-    <span class="picoTexto">
+picoEl.innerHTML = `
+<span class="picoTexto">
 
-   ⚡ Producción: ☀️ <b>${inicioHora}</b> → 🌙 <b>${finHora}</b> 
-   <span style="color:#facc55; font-weight:bold;">(${duracion})</span>
+⚡ Producción: ☀️ <b>${inicioHora}</b> → 🌙 <b>${finHora}</b> 
+<span style="color:#facc55; font-weight:bold;">(${duracion})</span>
 
-    <br>
+<br>
 
 ☀️ Pico Alto de Hoy: 
 <b>${labels[indicePico]}</b> 
 <span style="color:#22c55e; font-weight:bold;">
 (${valores[indicePico]} kW)
 </span>
+
 <span style="color:#ffffff; font-weight:bold;">
  - Ayer: (${maxAyerGlobal} kW)
 </span>
 
 <br>
-
 
 ⚡ Ahora Estas Obteniendo: 
 <b style="color:#facc15">${Math.round(tuPotenciaW)} W</b>
@@ -1663,8 +1652,8 @@ if(esAdmin){
 <br>
 
 ${bloquePrivado}
-
 `;
+
 // 🔥 JUSTO AQUÍ 👇
 const bloque = document.getElementById("bloqueEnergia");
 
