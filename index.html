@@ -1056,25 +1056,27 @@ async function cargarTiempo(){
     }
 }
 
-// GUARDAMOS LOS DATOS DE ESTE MES TIENES EN LA BASE DE DATOS DIARIAMENTE
+// GUARDAMOS LOS DATOS DE ESTE MES EN LA BASE DE DATOS
 async function guardarMes(totalMes, tuParte){
 
     let mesActual = new Date().toISOString().slice(0,7) + "-01";
 
-    // 🔥 borrar mes actual
-    await supabaseClient
+    const { error } = await supabaseClient
         .from('produccion')
-        .delete()
-        .eq('mes', mesActual);
+        .upsert(
+    {
+        mes: mesActual,
+        reparto: tuParte,
+        produccion: totalMes / 1000
+    },
+    {
+        onConflict: "mes"
+    }
+);
 
-    // 🔥 insertar nuevo dato (USANDO produccion ✔)
-    await supabaseClient
-        .from('produccion')
-        .insert({
-            mes: mesActual,
-            reparto: tuParte,
-            produccion: totalMes / 1000
-        });
+    if(error){
+        console.error("Error guardando mes:", error);
+    }
 
    // console.log("✅ guardado correcto");
 }
@@ -1216,6 +1218,15 @@ function resetEnergiaDiaria(){
 async function guardarEnergiaDiaria() {
 
     try {
+            
+        if(
+            acumuladoProduccion <= 0 &&
+            acumuladoRed <= 0 &&
+            acumuladoAutoconsumo <= 0 &&
+            acumuladoExcedente <= 0
+        ){
+            return;
+        }
 
         let hoy = new Date();
 
@@ -1250,13 +1261,12 @@ async function guardarEnergiaDiaria() {
                 pico_kw: picoKw,
                 pico_ayer_kw: maxAyerGlobal,
 
-                produccion: acumuladoProduccion,
-                red: acumuladoRed,
-                autoconsumo: acumuladoAutoconsumo,
-                excedente: acumuladoExcedente,
-
-                consumo_total: consumoTotal,
-                autosuficiencia: autosuficiencia
+                produccion: Number(acumuladoProduccion.toFixed(2)),
+                red: Number(acumuladoRed.toFixed(2)),
+                autoconsumo: Number(acumuladoAutoconsumo.toFixed(2)),
+                excedente: Number(acumuladoExcedente.toFixed(2)),
+                consumo_total: Number(consumoTotal.toFixed(2)),
+                autosuficiencia: Number(autosuficiencia.toFixed(2))
             });
 
         if(error){
@@ -1312,7 +1322,11 @@ async function tiempoReal(){
     let o=await fetch(`https://monitoringapi.solaredge.com/site/${SITE_ID}/overview?api_key=${API_KEY}`);
     let d=await o.json();
 
-    let kwh=(d.overview?.lastDayData?.energy||0)/1000;
+    let kwh = (d.overview?.lastDayData?.energy || 0) / 1000;
+
+    let coef = 1.27 / 100;
+    let tuKwhRealHoy = kwh * coef * 0.974;
+    window.produccionRealHoy = tuKwhRealHoy;
 
     produccionHoy.innerHTML = `${kwh.toFixed(0)} kWh`;
 
@@ -1746,7 +1760,7 @@ if(esAdmin){
 ⚡ Ahora Estas Obteniendo: 
 <b style="color:#facc15">${Math.round(tuPotenciaW)} W</b>
 <span>
-<b style="color:#facc15">(Hoy: ${acumuladoProduccion.toFixed(2)} kWh)</b>
+<b style="color:#facc15">(Hoy: ${(window.produccionRealHoy || 0).toFixed(2)} kWh)</b>
 </span>
 
 ${bloquePrivado}
@@ -1902,11 +1916,8 @@ if(modo !== "admin" && modo !== "normal"){
     await guardarEnergiaDiaria();
 };
 
-setTimeout(()=>{
-    tiempoReal();
-    setInterval(tiempoReal,30000);
-    setInterval(graficaPotenciaReal,30000);
-},500);
+setInterval(tiempoReal,30000);
+setInterval(graficaPotenciaReal,30000);
 
 
 // 🔥 PULL TO REFRESH (AQUÍ VA)
