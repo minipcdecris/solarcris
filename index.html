@@ -1228,7 +1228,14 @@ async function guardarEnergiaDiaria() {
             return;
         }
 
-        let hoy = new Date();
+        let ahora = new Date();
+
+        let hoy = new Date(ahora);
+
+        // 🔥 si es antes de las 3 de la mañana → aún es "ayer"
+        if(ahora.getHours() < 3){
+        hoy.setDate(hoy.getDate() - 1);
+        }
 
         let fechaHoy =
         hoy.getFullYear() + "-" +
@@ -1261,7 +1268,7 @@ async function guardarEnergiaDiaria() {
                 pico_kw: picoKw,
                 pico_ayer_kw: maxAyerGlobal,
 
-                produccion: Number(acumuladoProduccion.toFixed(2)),
+                produccion: Number((window.produccionRealHoy || 0).toFixed(2)),
                 red: Number(acumuladoRed.toFixed(2)),
                 autoconsumo: Number(acumuladoAutoconsumo.toFixed(2)),
                 excedente: Number(acumuladoExcedente.toFixed(2)),
