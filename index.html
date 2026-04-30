@@ -497,7 +497,7 @@ z-index:99999;
             margin-top:10px;
             font-size:14px;
         "></div>
-        <div style="font-size:12px;">Desarrollador Cristóbal Jiménez V.12</div>
+        <div style="font-size:12px;">Desarrollador Cristóbal Jiménez V.13</div>
     </div>
 
 </div>
@@ -511,7 +511,7 @@ z-index:99999;
 
 
 <div class="topBar">
-    <div>Desarrollador Cristóbal Jiménez V.12</div>
+    <div>Desarrollador Cristóbal Jiménez V.13</div>
     <div id="horaUpdate">--</div>
 </div>
 
@@ -1059,26 +1059,64 @@ async function cargarTiempo(){
 // GUARDAMOS LOS DATOS DE ESTE MES EN LA BASE DE DATOS
 async function guardarMes(totalMes, tuParte){
 
-    let mesActual = new Date().toISOString().slice(0,7) + "-01";
+    let ahora = new Date();
 
-    const { error } = await supabaseClient
+    let año = ahora.getFullYear();
+    let mes = ahora.getMonth(); // 0-11
+
+    let mesActual =
+        año + "-" +
+        String(mes + 1).padStart(2, '0') + "-01";
+
+    // 🔥 obtener todos los meses guardados
+    const { data } = await supabaseClient
         .from('produccion')
-        .upsert(
-    {
-        mes: mesActual,
-        reparto: tuParte,
-        produccion: totalMes / 1000
-    },
-    {
-        onConflict: "mes"
-    }
-);
+        .select('mes');
 
-    if(error){
-        console.error("Error guardando mes:", error);
+    // 🔥 buscar último mes guardado
+    let mesesGuardados = data.map(d => new Date(d.mes));
+
+    let ultimoMesGuardado = mesesGuardados.length > 0
+        ? new Date(Math.max(...mesesGuardados))
+        : null;
+
+    let mesActualDate = new Date(mesActual);
+
+    // 🔴 SI ES MES NUEVO → CREAR
+    if(!ultimoMesGuardado || mesActualDate > ultimoMesGuardado){
+
+        await supabaseClient
+            .from('produccion')
+            .insert({
+                mes: mesActual,
+                reparto: tuParte || 0,
+                produccion: (totalMes || 0) / 1000
+            });
+
+        console.log("🆕 Mes creado:", mesActual);
+        return;
     }
 
-   // console.log("✅ guardado correcto");
+    // 🟢 SI ES EL MES ACTUAL → ACTUALIZAR
+    if(mesActualDate.getTime() === ultimoMesGuardado.getTime()){
+
+        if(totalMes > 0){
+            await supabaseClient
+                .from('produccion')
+                .update({
+                    reparto: tuParte,
+                    produccion: totalMes / 1000
+                })
+                .eq('mes', mesActual);
+
+            console.log("♻️ Mes actualizado:", mesActual);
+        }
+
+        return;
+    }
+
+    // 🔒 SI ES MES PASADO → NO TOCAR
+    console.log("🔒 Mes bloqueado (no se modifica):", mesActual);
 }
 
 function pintarCirculo(id, valor, max){
@@ -1581,6 +1619,25 @@ async function obtenerConsumo() {
   }
 }
 
+async function obtenerConsumoHoyHA(){
+
+    const url = "https://homeassistant.hadecris.win/api/states/sensor.consumo_diario_casa";
+
+    const res = await fetch(url, {
+        headers: {
+            "Authorization": "Bearer eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiIwNDI2OWJkYzBmYTc0MTcwOWNkYjE1ODk1OWZjOTg0MyIsImlhdCI6MTc3NjgwOTgyNiwiZXhwIjoyMDkyMTY5ODI2fQ.3Oz7nKhyfiRYEAuWGkrNyQp9_2T6n7o7nvjwdqErpuo",
+            "Content-Type": "application/json"
+        }
+    });
+
+    const data = await res.json();
+
+    const consumoHoy = parseFloat(data.state) || 0;
+
+    window.consumoHoy = consumoHoy;
+    console.log("Consumo HOY:", window.consumoHoy);
+}
+
 async function actualizarConsumo() {
   try {
     const consumo = await obtenerConsumo();
@@ -1688,17 +1745,25 @@ async function cargarDatosMensuales(){
 }
 
 async function actualizarTextoPico(labels, valores, indicePico){
-
+    
     let picoEl = document.getElementById("picoHora");
     if(!picoEl) return;
 
-        // 🔥 AÑADE ESTO
+    // 🔥 CONSUMO INSTANTÁNEO (W)
     const consumo = await obtenerConsumo();
     const produccion = potenciaActual * (1.27 / 100) || 0;
 
     const autoconsumo = Math.min(consumo || 0, produccion);
     const consumoRed = Math.max((consumo || 0) - produccion, 0);
     const excedente = Math.max(produccion - (consumo || 0), 0);
+
+    // 🔥 NUEVO SISTEMA (kWh reales)
+    let produccionHoy = window.produccionRealHoy || 0;
+    let consumoHoy    = window.consumoHoy || 0;
+
+    let autoconsumoHoy = Math.min(produccionHoy, consumoHoy);
+    let redHoy         = Math.max(consumoHoy - autoconsumoHoy, 0);
+    let excedenteHoy   = Math.max(produccionHoy - autoconsumoHoy, 0);
 
     let coef = 1.27 / 100;
 
@@ -1712,78 +1777,77 @@ async function actualizarTextoPico(labels, valores, indicePico){
 
     const esAdmin = localStorage.getItem("modoSolarCRIS") === "admin";
 
-let bloquePrivado = "";
+    let bloquePrivado = "";
 
-if(esAdmin){
-    bloquePrivado = `
+    if(esAdmin){
+        bloquePrivado = `
 
-    <br>
+        <br>
 
-    🗼 Red: 
-    <b style="color:#ef4444">${consumoRed.toFixed(0)} W</b>
-    <span>
-    <b style="color:#ef4444">(Hoy: ${acumuladoRed.toFixed(2)} kWh)</b>
-    </span>
+        🗼 Red: 
+        <b style="color:#ef4444">${consumoRed.toFixed(0)} W</b>
+        <span>
+        <b style="color:#ef4444">(Hoy: ${redHoy.toFixed(2)} kWh)</b>
+        </span>
 
-    <br>
+        <br>
 
-    🔋 Autoconsumo: 
-    <b style="color:#22c55e">${autoconsumo.toFixed(0)} W</b>
-    <span>
-    <b style="color:#22c55e">(Hoy: ${acumuladoAutoconsumo.toFixed(2)} kWh)</b>
-    </span>
+        🔋 Autoconsumo: 
+        <b style="color:#22c55e">${autoconsumo.toFixed(0)} W</b>
+        <span>
+        <b style="color:#22c55e">(Hoy: ${autoconsumoHoy.toFixed(2)} kWh)</b>
+        </span>
 
-    <br>
+        <br>
 
-    📤 Excedente: 
-    <b style="color:#3b82f6">${excedente.toFixed(0)} W</b>
-    <span>
-    <b style="color:#3b82f6">(Hoy: ${acumuladoExcedente.toFixed(2)} kWh)</b>
-    </span>
-    `;
-}
+        📤 Excedente: 
+        <b style="color:#3b82f6">${excedente.toFixed(0)} W</b>
+        <span>
+        <b style="color:#3b82f6">(Hoy: ${excedenteHoy.toFixed(2)} kWh)</b>
+        </span>
+        `;
+    }
 
     picoEl.innerHTML = `
     <span class="picoTexto">
 
-   ⚡ Producción: ☀️ <b>${inicioHora}</b> → 🌙 <b>${finHora}</b> 
-   <span style="color:#facc55; font-weight:bold;">(${duracion})</span>
+    ⚡ Producción: ☀️ <b>${inicioHora}</b> → 🌙 <b>${finHora}</b> 
+    <span style="color:#facc55; font-weight:bold;">(${duracion})</span>
 
     <br>
 
-☀️ Pico Alto de Hoy: 
-<b>${labels[indicePico]}</b> 
-<span style="color:#22c55e; font-weight:bold;">
-(${valores[indicePico]} kW)
-</span>
-<span style="color:#ffffff; font-weight:bold;">
- - Ayer: (${maxAyerGlobal} kW)
-</span>
+    ☀️ Pico Alto de Hoy: 
+    <b>${labels[indicePico]}</b> 
+    <span style="color:#22c55e; font-weight:bold;">
+    (${valores[indicePico]} kW)
+    </span>
+    <span style="color:#ffffff; font-weight:bold;">
+     - Ayer: (${maxAyerGlobal} kW)
+    </span>
 
-<br>
+    <br>
 
-<div id="bloqueEnergia">
+    <div id="bloqueEnergia">
 
-⚡ Ahora Estas Obteniendo: 
-<b style="color:#facc15">${Math.round(tuPotenciaW)} W</b>
-<span>
-<b style="color:#facc15">(Hoy: ${(window.produccionRealHoy || 0).toFixed(2)} kWh)</b>
-</span>
+    ⚡ Ahora Estas Obteniendo: 
+    <b style="color:#facc15">${Math.round(tuPotenciaW)} W</b>
+    <span>
+    <b style="color:#facc15">(Hoy: ${(window.produccionRealHoy || 0).toFixed(2)} kWh)</b>
+    </span>
 
-${bloquePrivado}
+    ${bloquePrivado}
 
-</div>
+    </div>
+    `;
 
+    // 🔥 Mostrar / ocultar bloque
+    const bloque = document.getElementById("bloqueEnergia");
 
-`;
-// 🔥 JUSTO AQUÍ 👇
-const bloque = document.getElementById("bloqueEnergia");
-
-if (consumo === null) {
-  if (bloque) bloque.style.display = "none";
-} else {
-  if (bloque) bloque.style.display = "block";
-}
+    if (consumo === null) {
+        if (bloque) bloque.style.display = "none";
+    } else {
+        if (bloque) bloque.style.display = "block";
+    }
 }
 
 function dibujarGraficaMensual(labels,valores){
@@ -1921,6 +1985,7 @@ if(modo !== "admin" && modo !== "normal"){
     await cargarTiempo(); // 🔥 ESTA LÍNEA
     await graficaPotenciaReal();
     await guardarEnergiaDiaria();
+    await obtenerConsumoHoyHA();
 };
 
 setInterval(tiempoReal,30000);
