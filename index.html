@@ -578,6 +578,14 @@ z-index:99999;
 
 </div>
 
+<div id="proyeccionMes" style="
+text-align:center;
+margin:10px 0;
+font-weight:bold;
+color:#facc15;
+font-size:14px;
+"></div>
+
 <div class="card">
 
 
@@ -620,12 +628,31 @@ z-index:99999;
     <canvas id="grafica"></canvas>
 </div>
 
+<!-- GRAFICA MES ANTERIOR-->
 <div class="card">
     <div style="display:flex; justify-content:space-between; align-items:center;">
         <div class="title">Producción Diaria del Mes Anterior</div>
         <div id="mejorDiaAnterior" class="title" style="text-align:right;"></div>
     </div>
     <canvas id="graficaMesAnterior"></canvas>
+</div>
+
+<!-- GRAFICA MES ACTUAL PROPIO-->
+<div class="card">
+    <div style="display:flex; justify-content:space-between; align-items:center;">
+        <div class="title">👤 Tu Producción Diaria Mes Actual</div>
+        <div id="mejorDiaPropioActual" class="title" style="text-align:right;"></div>
+    </div>
+    <canvas id="graficaMesActualPropia"></canvas>
+</div>
+
+<!-- GRAFICA MES ANTERIOR PROPIO-->
+<div class="card">
+    <div style="display:flex; justify-content:space-between; align-items:center;">
+        <div class="title">👤 Tu Producción Diaria Mes Anterior</div>
+        <div id="mejorDiaPropioAnterior" class="title" style="text-align:right;"></div>
+    </div>
+    <canvas id="graficaMesAnteriorPropia"></canvas>
 </div>
 
 </div>
@@ -1182,6 +1209,302 @@ async function graficaMesAnterior(){
 
     }catch(err){
         console.error(err);
+    }
+}
+
+async function graficaMesActualPropia(){
+
+    try{
+
+        let hoy = new Date();
+
+        let año = hoy.getFullYear();
+        let mes = String(hoy.getMonth()+1).padStart(2,'0');
+        let diaActual = hoy.getDate();
+
+        let diasMes = new Date(año, mes, 0).getDate();
+
+        let url = `https://monitoringapi.solaredge.com/site/${SITE_ID}/energy?timeUnit=DAY&startDate=${año}-${mes}-01&endDate=${año}-${mes}-${diasMes}&api_key=${API_KEY}`;
+
+        let r = await fetch(url);
+        let d = await r.json();
+
+        let valoresRaw = d.energy?.values || [];
+
+        let labels = [];
+        let valores = [];
+
+        let coef = 1.27 / 100;
+        let ajuste = 0.974;
+
+        let max = 0;
+
+        for(let i=0;i<diaActual;i++){
+
+            labels.push((i+1).toString());
+
+            let totalKwh = (valoresRaw[i]?.value || 0) / 1000;
+
+            // 🔥 TU PARTE
+            let tuKwh = totalKwh * coef * ajuste;
+
+            valores.push(tuKwh);
+
+            if(tuKwh > max){
+                max = tuKwh;
+            }
+        }
+
+        let indiceMejor = valores.indexOf(max);
+
+        // 🔥 TEXTO MEJOR DÍA
+let el = document.getElementById("mejorDiaPropioActual");
+
+if(el){
+    el.innerHTML = `
+    ⭐ Mejor Día del Mes<br>
+    Día ${indiceMejor + 1} - ${max.toFixed(0)} kWh
+    `;
+}
+
+        const ctx = document.getElementById("graficaMesActualPropia");
+
+        if(window.chartMesActualPropia) window.chartMesActualPropia.destroy();
+
+        window.chartMesActualPropia = new Chart(ctx,{
+            type:'bar',
+            data:{
+                labels,
+                datasets:[{
+                    data:valores,
+                    backgroundColor:valores.map((v,i)=>{
+                        if(i === indiceMejor) return "#22c55e";
+                        return "#3b82f6";
+                    }),
+                    borderRadius:6
+                }]
+            },
+            options:{
+                interaction:{ mode:null },
+                hover:{ mode:null },
+                plugins:{
+                    legend:{display:false},
+                    datalabels:{
+                        color:"#ffffff",
+                        anchor:"end",
+                        align:"top",
+                        offset:4,
+                        font:{
+                            weight:"bold",
+                            size:9
+                        },
+                        formatter:(value)=>{
+                            if(value <= 0) return "";
+                            let num = Math.round(value).toString();
+                            return num.split("");
+                        }
+                    }
+                },
+                scales:{
+                    x:{
+                        grid:{display:false},
+                        ticks:{
+                            color:"#ffffff",
+                            font:{ size:8 },
+                            autoSkip:false,
+                            maxRotation:0,
+                            minRotation:0
+                        }
+                    },
+                    y:{
+                        grid:{color:"#334155"},
+                        beginAtZero:true,
+                        suggestedMax: (Math.max(...valores) || 10) * 1.4
+                    }
+                }
+            }
+        });
+
+    }catch(err){
+        console.error(err);
+    }
+}
+
+async function graficaMesAnteriorPropia(){
+
+    try{
+
+        let hoy = new Date();
+
+        let año = hoy.getFullYear();
+        let mes = hoy.getMonth();
+
+        if(mes === 0){
+            mes = 12;
+            año--;
+        }
+
+        let mesAnterior = String(mes).padStart(2,'0');
+
+        let diasMes = new Date(año, mes, 0).getDate();
+
+        let url = `https://monitoringapi.solaredge.com/site/${SITE_ID}/energy?timeUnit=DAY&startDate=${año}-${mesAnterior}-01&endDate=${año}-${mesAnterior}-${diasMes}&api_key=${API_KEY}`;
+
+        let r = await fetch(url);
+        let d = await r.json();
+
+        let valoresRaw = d.energy?.values || [];
+
+        let labels = [];
+        let valores = [];
+
+        let coef = 1.27 / 100;
+        let ajuste = 0.974;
+
+        let max = 0;
+
+        for(let i=0;i<valoresRaw.length;i++){
+
+            labels.push((i+1).toString());
+
+            let totalKwh = (valoresRaw[i]?.value || 0) / 1000;
+
+            // 🔥 TU PARTE
+            let tuKwh = totalKwh * coef * ajuste;
+
+            valores.push(tuKwh);
+
+            if(tuKwh > max){
+                max = tuKwh;
+            }
+        }
+
+        let indiceMejor = valores.indexOf(max);
+
+        // 🔥 TEXTO MEJOR DÍA
+            let el = document.getElementById("mejorDiaPropioAnterior");
+
+if(el){
+    el.innerHTML = `
+    ⭐ Mejor Día del Mes<br>
+    Día ${indiceMejor + 1} - ${max.toFixed(0)} kWh
+    `;
+}
+
+        const ctx = document.getElementById("graficaMesAnteriorPropia");
+
+        if(window.chartMesAnteriorPropia) window.chartMesAnteriorPropia.destroy();
+
+        window.chartMesAnteriorPropia = new Chart(ctx,{
+            type:'bar',
+            data:{
+                labels,
+                datasets:[{
+                    data:valores,
+                    backgroundColor:valores.map((v,i)=>{
+                        if(i === indiceMejor) return "#22c55e";
+                        return "#3b82f6";
+                    }),
+                    borderRadius:6
+                }]
+            },
+            options:{
+                interaction:{ mode:null },
+                hover:{ mode:null },
+                plugins:{
+                    legend:{display:false},
+                    datalabels:{
+                        color:"#ffffff",
+                        anchor:"end",
+                        align:"top",
+                        offset:4,
+                        font:{
+                            weight:"bold",
+                            size:9
+                        },
+                        formatter:(value)=>{
+                            if(value <= 0) return "";
+                            let num = Math.round(value).toString();
+                            return num.split("");
+                        }
+                    }
+                },
+                scales:{
+                    x:{
+                        grid:{display:false},
+                        ticks:{
+                            color:"#ffffff",
+                            font:{ size:8 },
+                            autoSkip:false,
+                            maxRotation:0,
+                            minRotation:0
+                        }
+                    },
+                    y:{
+                        grid:{color:"#334155"},
+                        beginAtZero:true,
+                        suggestedMax: (Math.max(...valores) || 10) * 1.4
+                    }
+                }
+            }
+        });
+
+    }catch(err){
+        console.error(err);
+    }
+}
+
+async function proyeccionMesActual(){
+
+    let hoy = new Date();
+
+    let año = hoy.getFullYear();
+    let mes = String(hoy.getMonth()+1).padStart(2,'0');
+    let diaActual = hoy.getDate();
+
+    let diasMes = new Date(año, mes, 0).getDate();
+
+    let url = `https://monitoringapi.solaredge.com/site/${SITE_ID}/energy?timeUnit=DAY&startDate=${año}-${mes}-01&endDate=${año}-${mes}-${diaActual}&api_key=${API_KEY}`;
+
+    let r = await fetch(url);
+    let d = await r.json();
+
+    let valores = d.energy?.values || [];
+// 🔥 quitar último día si es 0 (hoy sin datos)
+if(valores.length > 0){
+    let ultimo = valores[valores.length - 1]?.value || 0;
+
+    if(ultimo === 0){
+        valores.pop();
+        diaActual--;
+    }
+}
+    let coef = 1.27 / 100;
+    let ajuste = 0.974;
+
+    let total = 0;
+
+    for(let i=0;i<valores.length;i++){
+        let kwh = (valores[i]?.value || 0) / 1000;
+        total += kwh * coef * ajuste;
+    }
+
+    if(diaActual === 0) return;
+
+    if(diaActual <= 0) return;
+
+let media = total / diaActual;
+
+    let proyeccion = media * diasMes;
+
+    // 🔥 rango (más realista)
+    let min = proyeccion * 0.9;
+    let max = proyeccion * 1.1;
+
+    const el = document.getElementById("proyeccionMes");
+
+    if(el){
+        el.innerHTML = `📈 Proyección de este Mes: ${min.toFixed(0)} – ${max.toFixed(0)} kWh`;
     }
 }
 
@@ -2108,6 +2431,9 @@ if(modo !== "admin" && modo !== "normal"){
     await guardarEnergiaDiaria();
     await obtenerConsumoHoyHA();
     await graficaMesAnterior();
+    await graficaMesActualPropia();
+    await graficaMesAnteriorPropia();
+    await proyeccionMesActual();
 };
 
 setInterval(tiempoReal,30000);
