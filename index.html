@@ -620,6 +620,14 @@ z-index:99999;
     <canvas id="grafica"></canvas>
 </div>
 
+<div class="card">
+    <div style="display:flex; justify-content:space-between; align-items:center;">
+        <div class="title">Producción Diaria del Mes Anterior</div>
+        <div id="mejorDiaAnterior" class="title" style="text-align:right;"></div>
+    </div>
+    <canvas id="graficaMesAnterior"></canvas>
+</div>
+
 </div>
 
 </div>
@@ -1053,6 +1061,127 @@ async function cargarTiempo(){
         }else{
             card.classList.add("weather-sun");
         }
+    }
+}
+
+async function graficaMesAnterior(){
+
+    try{
+
+        let hoy = new Date();
+
+        // 🔥 calcular mes anterior
+        let año = hoy.getFullYear();
+        let mes = hoy.getMonth(); // 0-11
+
+        if(mes === 0){
+            mes = 12;
+            año--;
+        }
+
+        let mesAnterior = String(mes).padStart(2,'0');
+
+        let diasMes = new Date(año, mes, 0).getDate();
+
+        let url = `https://monitoringapi.solaredge.com/site/${SITE_ID}/energy?timeUnit=DAY&startDate=${año}-${mesAnterior}-01&endDate=${año}-${mesAnterior}-${diasMes}&api_key=${API_KEY}`;
+
+        let r = await fetch(url);
+        let d = await r.json();
+
+        let valoresRaw = d.energy?.values || [];
+
+        let labels = [];
+        let valores = [];
+
+        let maxAntes = 0;
+
+        for(let i=0;i<valoresRaw.length;i++){
+
+            labels.push((i+1).toString());
+
+            let valor = valoresRaw[i]?.value || 0;
+            let kwh = valor / 1000;
+
+            valores.push(kwh);
+
+            if(kwh > maxAntes){
+                maxAntes = kwh;
+            }
+        }
+
+        // 🔥 mejor día
+        let indiceMejor = valores.indexOf(maxAntes);
+        let mejorDiaTexto = document.getElementById("mejorDiaAnterior");
+
+        if(mejorDiaTexto){
+            mejorDiaTexto.innerHTML = `
+            ⭐ Mejor Día del Mes<br>
+            Día ${indiceMejor + 1} - ${maxAntes.toFixed(0)} kWh
+            `;
+        }
+
+        // 🔥 colores iguales que tu gráfica actual
+        let colores = valores.map((v,i)=>{
+            if(i === indiceMejor) return "#16a34a";
+            return "#3b82f6";
+        });
+
+        const ctx = document.getElementById("graficaMesAnterior");
+
+        if(window.chartMesAnterior) window.chartMesAnterior.destroy();
+
+        window.chartMesAnterior = new Chart(ctx,{
+            type:'bar',
+            data:{
+                labels,
+                datasets:[{
+                    data:valores,
+                    backgroundColor:colores,
+                    borderRadius:6
+                }]
+            },
+            options:{
+                interaction:{ mode:null },
+                hover:{ mode:null },
+                plugins:{
+                    legend:{display:false},
+                    datalabels:{
+                        color:"#ffffff",
+                        anchor:"end",
+                        align:"top",
+                        font:{
+                            weight:"bold",
+                            size:9
+                        },
+             formatter:(value)=>{
+                   if(value <= 0) return "";
+                   let num = Math.round(value).toString();
+                   return num.split("");
+                } 
+                    }
+                },
+                scales:{
+                    x:{
+                        grid:{display:false},
+                        ticks:{
+                            color:"#ffffff",
+                            font:{ size:8 },
+                            autoSkip:false,
+                            maxRotation:0,
+                            minRotation:0
+                        }
+                    },
+                    y:{
+                        grid:{color:"#334155"},
+                        beginAtZero:true,
+                        suggestedMax: (Math.max(...valores) || 100) * 1.4
+                    }
+                }
+            }
+        });
+
+    }catch(err){
+        console.error(err);
     }
 }
 
@@ -1539,16 +1668,8 @@ datalabels:{
     color:"#ffffff",
 
     anchor:"end",
-
-    align:(context)=>{
-        let value = context.dataset.data[context.dataIndex];
-        return value < 100 ? "end" : "start";
-    },
-
-    offset:(context)=>{
-        let value = context.dataset.data[context.dataIndex];
-        return value < 100 ? 0 : 10;
-    },
+    align:"top",
+    offset:4,
 
     font:{
         weight:"bold",
@@ -1986,6 +2107,7 @@ if(modo !== "admin" && modo !== "normal"){
     await graficaPotenciaReal();
     await guardarEnergiaDiaria();
     await obtenerConsumoHoyHA();
+    await graficaMesAnterior();
 };
 
 setInterval(tiempoReal,30000);
