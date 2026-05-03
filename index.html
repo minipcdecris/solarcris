@@ -3,7 +3,7 @@
 <head>
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1">
-<meta name="apple-mobile-web-app-capable" content="yes">
+<meta name="mobile-web-app-capable" content="yes">
 <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
 <link rel="icon" type="image/png" href="icon.png">
 <link rel="apple-touch-icon" href="icon.png">
@@ -497,7 +497,7 @@ z-index:99999;
             margin-top:10px;
             font-size:14px;
         "></div>
-        <div style="font-size:12px;">Desarrollador Cristóbal Jiménez V.14</div>
+        <div style="font-size:12px;">Desarrollador Cristóbal Jiménez V.15</div>
     </div>
 
 </div>
@@ -511,7 +511,7 @@ z-index:99999;
 
 
 <div class="topBar">
-    <div>Desarrollador Cristóbal Jiménez V.14</div>
+    <div>Desarrollador Cristóbal Jiménez V.15</div>
     <div id="horaUpdate">--</div>
 </div>
 
@@ -578,13 +578,7 @@ z-index:99999;
 
 </div>
 
-<div id="proyeccionMes" style="
-text-align:center;
-margin:10px 0;
-font-weight:bold;
-color:#facc15;
-font-size:14px;
-"></div>
+
 
 <div class="card">
 
@@ -1221,7 +1215,8 @@ async function graficaMesActualPropia(){
 
         let año = hoy.getFullYear();
         let mes = String(hoy.getMonth()+1).padStart(2,'0');
-        let diaActual = hoy.getDate();
+        let diaActual = String(hoy.getDate()).padStart(2,'0');
+        
 
         let diasMes = new Date(año, mes, 0).getDate();
 
@@ -1455,59 +1450,6 @@ if(el){
     }
 }
 
-async function proyeccionMesActual(){
-
-    let hoy = new Date();
-
-    let año = hoy.getFullYear();
-    let mes = String(hoy.getMonth()+1).padStart(2,'0');
-    let diaActual = hoy.getDate();
-
-    let diasMes = new Date(año, mes, 0).getDate();
-
-    let url = `https://monitoringapi.solaredge.com/site/${SITE_ID}/energy?timeUnit=DAY&startDate=${año}-${mes}-01&endDate=${año}-${mes}-${diaActual}&api_key=${API_KEY}`;
-
-    let r = await fetch(url);
-    let d = await r.json();
-
-    let valores = d.energy?.values || [];
-// 🔥 quitar último día si es 0 (hoy sin datos)
-if(valores.length > 0){
-    let ultimo = valores[valores.length - 1]?.value || 0;
-
-    if(ultimo === 0){
-        valores.pop();
-        diaActual--;
-    }
-}
-    let coef = 1.27 / 100;
-    let ajuste = 0.974;
-
-    let total = 0;
-
-    for(let i=0;i<valores.length;i++){
-        let kwh = (valores[i]?.value || 0) / 1000;
-        total += kwh * coef * ajuste;
-    }
-
-    if(diaActual === 0) return;
-
-    if(diaActual <= 0) return;
-
-let media = total / diaActual;
-
-    let proyeccion = media * diasMes;
-
-    // 🔥 rango (más realista)
-    let min = proyeccion * 0.9;
-    let max = proyeccion * 1.1;
-
-    const el = document.getElementById("proyeccionMes");
-
-    if(el){
-        el.innerHTML = `📈 Proyección de este Mes: ${min.toFixed(0)} – ${max.toFixed(0)} kWh`;
-    }
-}
 
 // GUARDAMOS LOS DATOS DE ESTE MES EN LA BASE DE DATOS
 async function guardarMes(totalMes, tuParte){
@@ -1724,9 +1666,9 @@ async function guardarEnergiaDiaria() {
         let hoy = new Date(ahora);
 
         // 🔥 si es antes de las 3 de la mañana → aún es "ayer"
-        if(ahora.getHours() < 3){
-        hoy.setDate(hoy.getDate() - 1);
-        }
+        //if(ahora.getHours() < 3){
+        //hoy.setDate(hoy.getDate() - 1);
+        //}
 
         let fechaHoy =
         hoy.getFullYear() + "-" +
@@ -1738,13 +1680,20 @@ async function guardarEnergiaDiaria() {
         let picoHora = labelsGlobal[indicePicoGlobal] || "--";
         let picoKw = valoresGlobal[indicePicoGlobal] || 0;
 
-        let consumoTotal = acumuladoRed + acumuladoAutoconsumo;
+        let produccion = window.produccionRealHoy || 0;
+        let consumo = window.consumoHoy || 0;
+
+        let autoconsumo = Math.min(produccion, consumo);
+        let red = Math.max(consumo - autoconsumo, 0);
+        let excedente = Math.max(produccion - autoconsumo, 0);
+
+        let consumoTotal = consumo;
 
         let autosuficiencia = 0;
 
         if(consumoTotal > 0){
-            autosuficiencia = (acumuladoAutoconsumo / consumoTotal) * 100;
-        }
+            autosuficiencia = (autoconsumo / consumoTotal) * 100;
+}
 
         const { error } = await supabaseClient
             .from("energia_diaria")
@@ -1759,10 +1708,10 @@ async function guardarEnergiaDiaria() {
                 pico_kw: picoKw,
                 pico_ayer_kw: maxAyerGlobal,
 
-                produccion: Number((window.produccionRealHoy || 0).toFixed(2)),
-                red: Number(acumuladoRed.toFixed(2)),
-                autoconsumo: Number(acumuladoAutoconsumo.toFixed(2)),
-                excedente: Number(acumuladoExcedente.toFixed(2)),
+                produccion: Number(produccion.toFixed(2)),
+                red: Number(red.toFixed(2)),
+                autoconsumo: Number(autoconsumo.toFixed(2)),
+                excedente: Number(excedente.toFixed(2)),
                 consumo_total: Number(consumoTotal.toFixed(2)),
                 autosuficiencia: Number(autosuficiencia.toFixed(2))
             });
@@ -1793,7 +1742,7 @@ async function recuperarEnergiaHoy() {
             .from("energia_diaria")
             .select("*")
             .eq("fecha", fechaHoy)
-            .single();
+            .maybeSingle();
 
         if(error || !data){
             console.log("No hay datos guardados hoy todavía");
@@ -1824,7 +1773,13 @@ async function tiempoReal(){
 
     let coef = 1.27 / 100;
     let tuKwhRealHoy = kwh * coef * 0.974;
+    let ahora = new Date();
+
+if(ahora.getHours() < 5){
+    window.produccionRealHoy = 0;
+} else {
     window.produccionRealHoy = tuKwhRealHoy;
+}
 
     produccionHoy.innerHTML = `${kwh.toFixed(0)} kWh`;
 
@@ -2198,6 +2153,7 @@ async function actualizarTextoPico(labels, valores, indicePico){
     const consumo = await obtenerConsumo();
     const produccion = potenciaActual * (1.27 / 100) || 0;
 
+ 
     const autoconsumo = Math.min(consumo || 0, produccion);
     const consumoRed = Math.max((consumo || 0) - produccion, 0);
     const excedente = Math.max(produccion - (consumo || 0), 0);
@@ -2229,10 +2185,15 @@ async function actualizarTextoPico(labels, valores, indicePico){
 
         <br>
 
+        🏠 Consumo Total: 
+        <b style="color:#3b82f6">${(window.consumoHoy || 0).toFixed(2)} kWh</b>
+
+        <br>
+
         🗼 Red: 
-        <b style="color:#ef4444">${consumoRed.toFixed(0)} W</b>
+        <b style="color:#3b82f6">${consumoRed.toFixed(0)} W</b>
         <span>
-        <b style="color:#ef4444">(Hoy: ${redHoy.toFixed(2)} kWh)</b>
+        <b style="color:#3b82f6">(Hoy: ${redHoy.toFixed(2)} kWh)</b>
         </span>
 
         <br>
@@ -2246,9 +2207,9 @@ async function actualizarTextoPico(labels, valores, indicePico){
         <br>
 
         📤 Excedente: 
-        <b style="color:#3b82f6">${excedente.toFixed(0)} W</b>
+        <b style="color:#facc55">${excedente.toFixed(0)} W</b>
         <span>
-        <b style="color:#3b82f6">(Hoy: ${excedenteHoy.toFixed(2)} kWh)</b>
+        <b style="color:#facc55">(Hoy: ${excedenteHoy.toFixed(2)} kWh)</b>
         </span>
         `;
     }
@@ -2275,9 +2236,9 @@ async function actualizarTextoPico(labels, valores, indicePico){
     <div id="bloqueEnergia">
 
     ⚡ Ahora Estas Obteniendo: 
-    <b style="color:#facc15">${Math.round(tuPotenciaW)} W</b>
+    <b style="color:#22c55e">${Math.round(tuPotenciaW)} W</b>
     <span>
-    <b style="color:#facc15">(Hoy: ${(window.produccionRealHoy || 0).toFixed(2)} kWh)</b>
+    <b style="color:#22c55e">(Hoy: ${(window.produccionRealHoy || 0).toFixed(2)} kWh)</b>
     </span>
 
     ${bloquePrivado}
@@ -2292,6 +2253,18 @@ async function actualizarTextoPico(labels, valores, indicePico){
         if (bloque) bloque.style.display = "none";
     } else {
         if (bloque) bloque.style.display = "block";
+    }
+}
+
+async function actualizarBloqueEnergia(){
+
+    // 🔄 traer datos actualizados
+    await obtenerConsumoHoyHA();
+    await tiempoReal();
+
+    // 🔥 recalcular bloque
+    if(labelsGlobal.length > 0){
+        await actualizarTextoPico(labelsGlobal, valoresGlobal, indicePicoGlobal);
     }
 }
 
@@ -2434,7 +2407,7 @@ if(modo !== "admin" && modo !== "normal"){
     await graficaMesAnterior();
     await graficaMesActualPropia();
     await graficaMesAnteriorPropia();
-    await proyeccionMesActual();
+    await actualizarBloqueEnergia();
 };
 
 setInterval(tiempoReal,30000);
