@@ -970,7 +970,7 @@ plugins:{
         labels:{
             valor:{
                 display:(context)=> context.dataIndex === indicePico,
-                offset: 1,
+                offset: -1,
                 align:'top',
                 anchor:'end',
                 backgroundColor:'#020617',
@@ -1176,6 +1176,7 @@ async function graficaMesAnterior(){
                         color:"#ffffff",
                         anchor:"end",
                         align:"top",
+                        offset: -40,
                         font:{
                             weight:"bold",
                             size:9
@@ -1293,7 +1294,7 @@ if(el){
                         color:"#ffffff",
                         anchor:"end",
                         align:"top",
-                        offset:4,
+                        offset:-20,
                         font:{
                             weight:"bold",
                             size:9
@@ -1417,7 +1418,7 @@ if(el){
                         color:"#ffffff",
                         anchor:"end",
                         align:"top",
-                        offset:4,
+                        offset:-20,
                         font:{
                             weight:"bold",
                             size:9
@@ -1992,7 +1993,7 @@ datalabels:{
 
     anchor:"end",
     align:"top",
-    offset:4,
+    offset:-40,
 
     font:{
         weight:"bold",
