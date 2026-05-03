@@ -938,20 +938,54 @@ actualizarTextoPico(labels, valores, indicePico);
 
     if(window.chartHoras) window.chartHoras.destroy();
 
-   window.chartHoras = new Chart(ctx,{
+ window.chartHoras = new Chart(ctx,{
     type:'line',
     data:{
         labels,
-        datasets:[{
-            data:valores,
-            borderColor:"#22c55e",
-            backgroundColor:"rgba(34,197,94,0.1)",
-            fill:true,
-            tension:0.5,
-            pointRadius: 0,
-pointStyle:(c)=> c.dataIndex === indicePico ? "circle" : false,
-        }]
+        datasets:[
+            {
+                data: valores,
+                borderColor:"#22c55e",
+                backgroundColor:"rgba(34,197,94,0.1)",
+                fill:true,
+                tension:0.5,
+                pointRadius: 0,
+                pointStyle:(c)=> c.dataIndex === indicePico ? "circle" : false,
+            }
+        ]
     },
+
+    // 🔥 AQUI
+    plugins: [{
+        id: 'lineaPicoAyer',
+        afterDraw: (chart) => {
+
+            if(!maxAyerGlobal) return;
+
+            const {ctx, chartArea, scales} = chart;
+            const y = scales.y.getPixelForValue(maxAyerGlobal);
+
+            ctx.save();
+
+            ctx.strokeStyle = "rgba(255,255,255,0.6)";
+            ctx.lineWidth = 1.2;
+            ctx.strokeStyle = "#ffffff"; 
+            ctx.setLineDash([6,6]);
+// 🔥 TEXTO
+ctx.fillStyle = "#ffffff";
+ctx.font = "15px Arial";
+ctx.textAlign = "left";
+ctx.fillText(`Pico Maximo de Ayer: ${maxAyerGlobal} kW`, chartArea.left + 5, y - 6);
+
+            ctx.beginPath();
+            ctx.moveTo(chartArea.left, y);
+            ctx.lineTo(chartArea.right, y);
+            ctx.stroke();
+
+            ctx.restore();
+        }
+    }],
+    
 options:{
     responsive:true,
     maintainAspectRatio:false,
