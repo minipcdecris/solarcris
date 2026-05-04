@@ -1039,16 +1039,18 @@ plugins:{
             }
         },
         y:{
-            suggestedMax: Math.max(...valores) + 10,
-            display:true,
-            ticks:{
-                color:"#facc15",
-                callback:(v)=> v + " kW"
-            },
-            grid:{
-                color:"rgba(255,255,255,0.05)"
-            }
-        }
+    min: 0,          // 🔥 empieza desde 0
+    max: 100,        // 🔥 máximo fijo 100 kW
+    display:true,
+    ticks:{
+        stepSize: 10,   // 🔥 marcas cada 10 kW
+        color:"#facc15",
+        callback:(v)=> v + " kW"
+    },
+    grid:{
+        color:"rgba(255,255,255,0.05)"
+    }
+}
     }
 }
 
