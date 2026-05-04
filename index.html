@@ -2,12 +2,15 @@
 <html lang="es">
 <head>
 <meta charset="UTF-8">
-<meta name="viewport" content="width=device-width, initial-scale=1">
+<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+
 <meta name="mobile-web-app-capable" content="yes">
+<meta name="apple-mobile-web-app-capable" content="yes">
 <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
+<meta name="apple-mobile-web-app-title" content="SolarCRIS">
+
 <link rel="icon" type="image/png" href="icon.png">
 <link rel="apple-touch-icon" href="icon.png">
-<title>SolarCRIS</title>
 
 <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
 <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js"></script>
@@ -440,8 +443,6 @@ canvas{
 <div id="loaderSolar" class="loaderSolar">⟳</div>  
 
 <div id="loginScreen" style="
-overflow:hidden;
-touch-action:none;
 position:fixed;
 top:0;
 left:0;
@@ -452,6 +453,7 @@ display:flex;
 justify-content:center;
 align-items:center;
 z-index:99999;
+overflow:auto;
 ">
 
     <div style="
@@ -465,19 +467,22 @@ z-index:99999;
 
         <h2><span class="solGirando">☀️</span> SolarCRIS</h2>
         
-        <input
-            type="password"
-            id="passwordInput"
-            placeholder="Introduce contraseña"
-            style="
-                width:90%;
-                padding:10px;
-                margin-top:10px;
-                border-radius:8px;
-                border:none;
-                font-size:16px;
-            "
-        >
+<input
+    type="password"
+    id="passwordInput"
+    placeholder="Introduce contraseña"
+    autocapitalize="off"
+    autocorrect="off"
+    inputmode="text"
+    style="
+        width:90%;
+        padding:10px;
+        margin-top:10px;
+        border-radius:8px;
+        border:none;
+        font-size:16px;
+    "
+>
 
         <button onclick="loginSolarCRIS()" style="
             margin-top:20px;
@@ -497,7 +502,7 @@ z-index:99999;
             margin-top:10px;
             font-size:14px;
         "></div>
-        <div style="font-size:12px;">Desarrollador Cristóbal Jiménez V.15</div>
+        <div style="font-size:12px;">Desarrollador Cristóbal Jiménez V.16</div>
     </div>
 
 </div>
@@ -511,7 +516,7 @@ z-index:99999;
 
 
 <div class="topBar">
-    <div>Desarrollador Cristóbal Jiménez V.15</div>
+    <div>Desarrollador Cristóbal Jiménez V.16</div>
     <div id="horaUpdate">--</div>
 </div>
 
