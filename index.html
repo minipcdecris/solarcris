@@ -7,7 +7,7 @@
 <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
 <link rel="icon" type="image/png" href="icon.png">
 <link rel="apple-touch-icon" href="icon.png">
-<title>SolarCRIS</title>
+<title>SolarCRIS - Instalación Colectiva La Viña 2</title>
 
 <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
 <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js"></script>
@@ -441,6 +441,7 @@ canvas{
 
 <div id="loginScreen" style="
 overflow:hidden;
+touch-action:none;
 position:fixed;
 top:0;
 left:0;
@@ -496,7 +497,7 @@ z-index:99999;
             margin-top:10px;
             font-size:14px;
         "></div>
-        <div style="font-size:12px;">Desarrollador Cristóbal Jiménez V.15</div>
+        <div style="font-size:12px;">Desarrollador Cristóbal Jiménez V.14</div>
     </div>
 
 </div>
@@ -510,7 +511,7 @@ z-index:99999;
 
 
 <div class="topBar">
-    <div>Desarrollador Cristóbal Jiménez V.15</div>
+    <div>Desarrollador Cristóbal Jiménez V.14</div>
     <div id="horaUpdate">--</div>
 </div>
 
@@ -937,54 +938,20 @@ actualizarTextoPico(labels, valores, indicePico);
 
     if(window.chartHoras) window.chartHoras.destroy();
 
- window.chartHoras = new Chart(ctx,{
+   window.chartHoras = new Chart(ctx,{
     type:'line',
     data:{
         labels,
-        datasets:[
-            {
-                data: valores,
-                borderColor:"#22c55e",
-                backgroundColor:"rgba(34,197,94,0.1)",
-                fill:true,
-                tension:0.5,
-                pointRadius: 0,
-                pointStyle:(c)=> c.dataIndex === indicePico ? "circle" : false,
-            }
-        ]
+        datasets:[{
+            data:valores,
+            borderColor:"#22c55e",
+            backgroundColor:"rgba(34,197,94,0.1)",
+            fill:true,
+            tension:0.5,
+            pointRadius: 0,
+pointStyle:(c)=> c.dataIndex === indicePico ? "circle" : false,
+        }]
     },
-
-    // 🔥 AQUI
-    plugins: [{
-        id: 'lineaPicoAyer',
-        afterDraw: (chart) => {
-
-            if(!maxAyerGlobal) return;
-
-            const {ctx, chartArea, scales} = chart;
-            const y = scales.y.getPixelForValue(maxAyerGlobal);
-
-            ctx.save();
-
-            ctx.strokeStyle = "rgba(255,255,255,0.6)";
-            ctx.lineWidth = 1.2;
-            ctx.strokeStyle = "#ffffff"; 
-            ctx.setLineDash([6,6]);
-// 🔥 TEXTO
-ctx.fillStyle = "#ffffff";
-ctx.font = "15px Arial";
-ctx.textAlign = "left";
-ctx.fillText(`Ayer: ${maxAyerGlobal} kW`, chartArea.left + 5, y - 6);
-
-            ctx.beginPath();
-            ctx.moveTo(chartArea.left, y);
-            ctx.lineTo(chartArea.right, y);
-            ctx.stroke();
-
-            ctx.restore();
-        }
-    }],
-    
 options:{
     responsive:true,
     maintainAspectRatio:false,
@@ -1699,9 +1666,9 @@ async function guardarEnergiaDiaria() {
         let hoy = new Date(ahora);
 
         // 🔥 si es antes de las 3 de la mañana → aún es "ayer"
-        //if(ahora.getHours() < 3){
-        //hoy.setDate(hoy.getDate() - 1);
-        //}
+        if(ahora.getHours() < 3){
+        hoy.setDate(hoy.getDate() - 1);
+        }
 
         let fechaHoy =
         hoy.getFullYear() + "-" +
@@ -1713,20 +1680,13 @@ async function guardarEnergiaDiaria() {
         let picoHora = labelsGlobal[indicePicoGlobal] || "--";
         let picoKw = valoresGlobal[indicePicoGlobal] || 0;
 
-        let produccion = window.produccionRealHoy || 0;
-        let consumo = window.consumoHoy || 0;
-
-        let autoconsumo = Math.min(produccion, consumo);
-        let red = Math.max(consumo - autoconsumo, 0);
-        let excedente = Math.max(produccion - autoconsumo, 0);
-
-        let consumoTotal = consumo;
+        let consumoTotal = acumuladoRed + acumuladoAutoconsumo;
 
         let autosuficiencia = 0;
 
         if(consumoTotal > 0){
-            autosuficiencia = (autoconsumo / consumoTotal) * 100;
-}
+            autosuficiencia = (acumuladoAutoconsumo / consumoTotal) * 100;
+        }
 
         const { error } = await supabaseClient
             .from("energia_diaria")
@@ -1741,10 +1701,10 @@ async function guardarEnergiaDiaria() {
                 pico_kw: picoKw,
                 pico_ayer_kw: maxAyerGlobal,
 
-                produccion: Number(produccion.toFixed(2)),
-                red: Number(red.toFixed(2)),
-                autoconsumo: Number(autoconsumo.toFixed(2)),
-                excedente: Number(excedente.toFixed(2)),
+                produccion: Number((window.produccionRealHoy || 0).toFixed(2)),
+                red: Number(acumuladoRed.toFixed(2)),
+                autoconsumo: Number(acumuladoAutoconsumo.toFixed(2)),
+                excedente: Number(acumuladoExcedente.toFixed(2)),
                 consumo_total: Number(consumoTotal.toFixed(2)),
                 autosuficiencia: Number(autosuficiencia.toFixed(2))
             });
@@ -1806,13 +1766,7 @@ async function tiempoReal(){
 
     let coef = 1.27 / 100;
     let tuKwhRealHoy = kwh * coef * 0.974;
-    let ahora = new Date();
-
-if(ahora.getHours() < 5){
-    window.produccionRealHoy = 0;
-} else {
     window.produccionRealHoy = tuKwhRealHoy;
-}
 
     produccionHoy.innerHTML = `${kwh.toFixed(0)} kWh`;
 
@@ -2186,7 +2140,6 @@ async function actualizarTextoPico(labels, valores, indicePico){
     const consumo = await obtenerConsumo();
     const produccion = potenciaActual * (1.27 / 100) || 0;
 
- 
     const autoconsumo = Math.min(consumo || 0, produccion);
     const consumoRed = Math.max((consumo || 0) - produccion, 0);
     const excedente = Math.max(produccion - (consumo || 0), 0);
@@ -2218,15 +2171,10 @@ async function actualizarTextoPico(labels, valores, indicePico){
 
         <br>
 
-        🏠 Consumo Total: 
-        <b style="color:#3b82f6">${(window.consumoHoy || 0).toFixed(2)} kWh</b>
-
-        <br>
-
         🗼 Red: 
-        <b style="color:#3b82f6">${consumoRed.toFixed(0)} W</b>
+        <b style="color:#ef4444">${consumoRed.toFixed(0)} W</b>
         <span>
-        <b style="color:#3b82f6">(Hoy: ${redHoy.toFixed(2)} kWh)</b>
+        <b style="color:#ef4444">(Hoy: ${redHoy.toFixed(2)} kWh)</b>
         </span>
 
         <br>
@@ -2240,9 +2188,9 @@ async function actualizarTextoPico(labels, valores, indicePico){
         <br>
 
         📤 Excedente: 
-        <b style="color:#facc55">${excedente.toFixed(0)} W</b>
+        <b style="color:#3b82f6">${excedente.toFixed(0)} W</b>
         <span>
-        <b style="color:#facc55">(Hoy: ${excedenteHoy.toFixed(2)} kWh)</b>
+        <b style="color:#3b82f6">(Hoy: ${excedenteHoy.toFixed(2)} kWh)</b>
         </span>
         `;
     }
@@ -2269,9 +2217,9 @@ async function actualizarTextoPico(labels, valores, indicePico){
     <div id="bloqueEnergia">
 
     ⚡ Ahora Estas Obteniendo: 
-    <b style="color:#22c55e">${Math.round(tuPotenciaW)} W</b>
+    <b style="color:#facc15">${Math.round(tuPotenciaW)} W</b>
     <span>
-    <b style="color:#22c55e">(Hoy: ${(window.produccionRealHoy || 0).toFixed(2)} kWh)</b>
+    <b style="color:#facc15">(Hoy: ${(window.produccionRealHoy || 0).toFixed(2)} kWh)</b>
     </span>
 
     ${bloquePrivado}
@@ -2286,18 +2234,6 @@ async function actualizarTextoPico(labels, valores, indicePico){
         if (bloque) bloque.style.display = "none";
     } else {
         if (bloque) bloque.style.display = "block";
-    }
-}
-
-async function actualizarBloqueEnergia(){
-
-    // 🔄 traer datos actualizados
-    await obtenerConsumoHoyHA();
-    await tiempoReal();
-
-    // 🔥 recalcular bloque
-    if(labelsGlobal.length > 0){
-        await actualizarTextoPico(labelsGlobal, valoresGlobal, indicePicoGlobal);
     }
 }
 
@@ -2440,7 +2376,7 @@ if(modo !== "admin" && modo !== "normal"){
     await graficaMesAnterior();
     await graficaMesActualPropia();
     await graficaMesAnteriorPropia();
-    await actualizarBloqueEnergia();
+    
 };
 
 setInterval(tiempoReal,30000);
