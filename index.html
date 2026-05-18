@@ -441,6 +441,76 @@ canvas{
     width:100% !important;
     height:auto !important;
 }
+
+#recordOverlay{
+    position:fixed;
+    inset:0;
+    background:rgba(0,0,0,0.75);
+    backdrop-filter:blur(8px);
+
+    display:flex;
+    justify-content:center;
+    align-items:center;
+
+    z-index:999999;
+
+    opacity:0;
+    pointer-events:none;
+
+    transition:0.4s;
+}
+
+#recordOverlay.show{
+    opacity:1;
+    pointer-events:auto;
+}
+
+#recordBox{
+    position:relative;
+
+    width:85%;
+    max-width:420px;
+
+    animation:zoomRecord 0.5s ease;
+}
+
+#recordBox img{
+    width:100%;
+    display:block;
+}
+
+#recordValor{
+    position:absolute;
+
+    bottom:9%;
+    left:50%;
+
+    transform:translateX(-50%);
+
+    font-size:32px;
+    font-weight:bold;
+
+    color:#a3e635;
+
+    text-shadow:
+        0 0 10px rgba(163,230,53,0.9),
+        0 0 25px rgba(163,230,53,0.7);
+
+    white-space:nowrap;
+}
+
+@keyframes zoomRecord{
+    from{
+        transform:scale(0.7);
+        opacity:0;
+    }
+
+    to{
+        transform:scale(1);
+        opacity:1;
+    }
+}
+
 </style>
 </head>
 
@@ -1939,6 +2009,16 @@ labels.push((i+1).toString());
         // 🔥 detectar si hoy rompe récord
         let hoyValor = valores[diaActual-1] || 0;
         let esRecord = hoyValor > maxAntesDeHoy;
+        
+        let recordMostrado = localStorage.getItem("recordSolarCRIS");
+let hoyTexto = new Date().toDateString();
+
+if(esRecord && recordMostrado !== hoyTexto){
+
+    mostrarNuevoRecord(hoyValor);
+
+    localStorage.setItem("recordSolarCRIS", hoyTexto);
+}
 
         // 🔥 TEXTO PRO
         if(esRecord){
@@ -2423,6 +2503,28 @@ function logoutSolarCRIS(){
     location.reload();
 }
 
+function mostrarNuevoRecord(valor){
+
+    const overlay = document.getElementById("recordOverlay");
+    const valorEl = document.getElementById("recordValor");
+
+    if(!overlay || !valorEl) return;
+
+    valorEl.innerText = valor.toFixed(0) + " kWh";
+
+    overlay.classList.add("show");
+
+    // vibración
+    if(navigator.vibrate){
+        navigator.vibrate([300,100,300,100,500]);
+    }
+
+    // ocultar
+    setTimeout(()=>{
+        overlay.classList.remove("show");
+    }, 7000);
+}
+
 // INIT
 window.onload=async()=>{
 
@@ -2462,6 +2564,11 @@ if(modo !== "admin" && modo !== "normal"){
 setInterval(tiempoReal,30000);
 setInterval(graficaPotenciaReal,30000);
 
+setTimeout(()=>{
+
+    mostrarNuevoRecord(530);
+
+}, 2000);
 
 // 🔥 PULL TO REFRESH (AQUÍ VA)
 let startY = 0;
@@ -2524,6 +2631,18 @@ document.addEventListener("touchend", async (e)=>{
 });
 
 </script>
+<div id="recordOverlay">
 
+    <div id="recordBox">
+
+        <img src="record.png">
+
+        <div id="recordValor">
+            82 kWh
+        </div>
+
+    </div>
+
+</div>
 </body> 
 </html>
