@@ -508,7 +508,7 @@ overflow:auto;
             margin-top:10px;
             font-size:14px;
         "></div>
-        <div style="font-size:12px;">Desarrollador Cristóbal Jiménez V.17</div>
+        <div style="font-size:12px;">Desarrollador Cristóbal Jiménez V.18</div>
     </div>
 
 </div>
@@ -522,7 +522,7 @@ overflow:auto;
 
 
 <div class="topBar">
-    <div>Desarrollador Cristóbal Jiménez V.17</div>
+    <div>Desarrollador Cristóbal Jiménez V.18</div>
     <div id="horaUpdate">--</div>
 </div>
 
@@ -1722,12 +1722,18 @@ async function guardarEnergiaDiaria() {
         let picoHora = labelsGlobal[indicePicoGlobal] || "--";
         let picoKw = valoresGlobal[indicePicoGlobal] || 0;
 
-        let produccion = window.produccionRealHoy || 0;
-        let consumo = window.consumoHoy || 0;
+let produccion = Number(window.produccionRealHoy || 0);
+let consumo = Number(window.consumoHoy || 0);
 
-        let autoconsumo = Math.min(produccion, consumo);
-        let red = Math.max(consumo - autoconsumo, 0);
-        let excedente = Math.max(produccion - autoconsumo, 0);
+// 🔥 si no hay consumo válido NO guardar cálculos falsos
+if(consumo <= 0){
+    console.log("⛔ Consumo inválido, no se guarda energía");
+    return;
+}
+
+let autoconsumo = Math.min(produccion, consumo);
+let red = Math.max(consumo - autoconsumo, 0);
+let excedente = Math.max(produccion - autoconsumo, 0);
 
         let consumoTotal = consumo;
 
@@ -2444,6 +2450,7 @@ if(modo !== "admin" && modo !== "normal"){
     await cargarDatosMensuales();
     await cargarTiempo(); // 🔥 ESTA LÍNEA
     await graficaPotenciaReal();
+    await obtenerConsumoHoyHA();
     await guardarEnergiaDiaria();
     await obtenerConsumoHoyHA();
     await graficaMesAnterior();
