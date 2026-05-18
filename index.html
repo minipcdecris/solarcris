@@ -445,8 +445,8 @@ canvas{
 #recordOverlay{
     position:fixed;
     inset:0;
-    background:rgba(0,0,0,0.75);
-    backdrop-filter:blur(8px);
+    background:rgba(0, 0, 0, 0.75);
+    backdrop-filter:blur(1px);
 
     display:flex;
     justify-content:center;
@@ -2563,6 +2563,12 @@ if(modo !== "admin" && modo !== "normal"){
 
 setInterval(tiempoReal,30000);
 setInterval(graficaPotenciaReal,30000);
+
+setTimeout(()=>{
+
+    mostrarNuevoRecord(530);
+
+}, 2000);
 
 // 🔥 PULL TO REFRESH (AQUÍ VA)
 let startY = 0;
