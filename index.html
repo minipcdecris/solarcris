@@ -2235,7 +2235,7 @@ async function actualizarTextoPico(labels, valores, indicePico){
         🗼 Red: 
         <b style="color:#3b82f6">${consumoRed.toFixed(0)} W</b>
         <span>
-        <b style="color:#3b82f6">(Hoy: ${redHoy.toFixed(2)} kWh)</b>
+        <b style="color:#3b82f6">(Hoy: ${acumuladoRed.toFixed(2)} kWh)</b>
         </span>
 
         <br>
@@ -2243,7 +2243,7 @@ async function actualizarTextoPico(labels, valores, indicePico){
         🔋 Autoconsumo: 
         <b style="color:#22c55e">${autoconsumo.toFixed(0)} W</b>
         <span>
-        <b style="color:#22c55e">(Hoy: ${autoconsumoHoy.toFixed(2)} kWh)</b>
+        <b style="color:#22c55e">(Hoy: ${acumuladoAutoconsumo.toFixed(2)} kWh)</b>
         </span>
 
         <br>
@@ -2251,7 +2251,7 @@ async function actualizarTextoPico(labels, valores, indicePico){
         📤 Excedente: 
         <b style="color:#facc55">${excedente.toFixed(0)} W</b>
         <span>
-        <b style="color:#facc55">(Hoy: ${excedenteHoy.toFixed(2)} kWh)</b>
+        <b style="color:#facc55">(Hoy: ${acumuladoExcedente.toFixed(2)} kWh)</b>
         </span>
         `;
     }
