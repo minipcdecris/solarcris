@@ -511,6 +511,47 @@ canvas{
     }
 }
 
+.comparativaHeader{
+    font-size:22px;
+    font-weight:bold;
+    margin-bottom:14px;
+}
+
+.comparativaTabs{
+    display:flex;
+    gap:10px;
+    margin-bottom:20px;
+}
+
+.tabBtn{
+    flex:1;
+
+    background:#0f172a;
+    border:none;
+
+    color:#94a3b8;
+
+    padding:12px;
+
+    border-radius:14px;
+
+    font-size:16px;
+    cursor:pointer;
+
+    transition:0.3s;
+}
+
+.tabBtn.active{
+    background:#2563eb;
+    color:white;
+
+    box-shadow:0 0 15px rgba(37,99,235,0.5);
+}
+
+#graficaComparativa{
+    height:260px !important;
+}
+
 </style>
 </head>
 
@@ -678,6 +719,7 @@ overflow:auto;
 </div>
 
 
+
 <!-- GRAFICA DIARIA -->
 <div class="card">
     <div style="display:flex; justify-content:space-between; align-items:center;">
@@ -725,6 +767,32 @@ overflow:auto;
     <canvas id="graficaMesAnteriorPropia"></canvas>
 </div>
 
+<!-- COMPARATIVA -->
+<div class="card">
+
+    <div class="comparativaHeader">
+        ☀️ Producción Comparativa
+    </div>
+
+    <div class="comparativaTabs">
+
+        <button class="tabBtn active" onclick="cargarComparativa('mes', this)">
+            Mes
+        </button>
+
+        <button class="tabBtn" onclick="cargarComparativa('trimestre', this)">
+            Trimestre
+        </button>
+
+        <button class="tabBtn" onclick="cargarComparativa('anio', this)">
+            Año
+        </button>
+
+    </div>
+
+    <canvas id="graficaComparativa"></canvas>
+
+</div>
 </div>
 
 </div>
@@ -757,14 +825,14 @@ let ultimoDia = new Date().toDateString();
 let maxDesdeGrafica = 0;
 
 //COLORES DE LOS EJES DE LOS GRAFICOS
-Chart.defaults.color = "#facc15";
+Chart.defaults.color = "#cbd5e1";
 
 const supabaseClient = supabase.createClient(
 "https://mybooeipkgfwhvwszysr.supabase.co",
 "sb_publishable_N7BPbBJcbKUElxxRg6xkCw_uj99wyuy"
 );
 
-let chart, chartMensual;
+let chart, chartMensual, chartComparativa;
 let potenciaActual = 0;
 let labelsGlobal = [];
 let valoresGlobal = [];
@@ -2467,6 +2535,215 @@ function dibujarGraficaMensual(labels,valores){
 
 }// ✅ ESTA LLAVE FALTABA
 
+async function cargarComparativa(tipo, boton){
+
+    // botones activos
+    document.querySelectorAll(".tabBtn").forEach(btn=>{
+        btn.classList.remove("active");
+    });
+
+    if(boton){
+        boton.classList.add("active");
+    }
+
+    let hoy = new Date();
+
+    let añoActual = hoy.getFullYear();
+    let añoAnterior = añoActual - 1;
+
+    let inicioActual;
+    let finActual;
+
+    let inicioAnterior;
+    let finAnterior;
+
+    // 🔥 MES
+    if(tipo === "mes"){
+
+        inicioActual = `${añoActual}-01-01`;
+        finActual = `${añoActual}-12-31`;
+
+        inicioAnterior = `${añoAnterior}-01-01`;
+        finAnterior = `${añoAnterior}-12-31`;
+    }
+
+    // 🔥 TRIMESTRE
+    if(tipo === "trimestre"){
+
+        inicioActual = `${añoActual}-01-01`;
+        finActual = `${añoActual}-03-31`;
+
+        inicioAnterior = `${añoAnterior}-01-01`;
+        finAnterior = `${añoAnterior}-03-31`;
+    }
+
+    // 🔥 AÑO
+    if(tipo === "anio"){
+
+        inicioActual = `${añoActual}-01-01`;
+        finActual = hoy.toISOString().split("T")[0];
+
+        inicioAnterior = `${añoAnterior}-01-01`;
+        finAnterior = `${añoAnterior}-12-31`;
+    }
+
+    // API ACTUAL
+    let urlActual =
+    `https://monitoringapi.solaredge.com/site/${SITE_ID}/energy?timeUnit=MONTH&startDate=${inicioActual}&endDate=${finActual}&api_key=${API_KEY}`;
+
+    // API ANTERIOR
+    let urlAnterior =
+    `https://monitoringapi.solaredge.com/site/${SITE_ID}/energy?timeUnit=MONTH&startDate=${inicioAnterior}&endDate=${finAnterior}&api_key=${API_KEY}`;
+
+    let r1 = await fetch(urlActual);
+    let d1 = await r1.json();
+
+    let r2 = await fetch(urlAnterior);
+    let d2 = await r2.json();
+
+    let actual = d1.energy?.values || [];
+    let anterior = d2.energy?.values || [];
+
+let datosActual = actual.map(v=>
+    Number(((v.value || 0) / 1000000).toFixed(1))
+);
+
+let datosAnterior = anterior.map(v=>
+    Number(((v.value || 0) / 1000000).toFixed(1))
+);
+
+let labels = [];
+let valoresActual = [];
+let valoresAnterior = [];
+
+// 🔥 MES
+if(tipo === "mes"){
+
+    labels = [
+        "ene","feb","mar","abr","may","jun",
+        "jul","ago","sept","oct","nov","dic"
+    ];
+
+    valoresActual = datosActual;
+    valoresAnterior = datosAnterior;
+}
+
+// 🔥 TRIMESTRE
+else if(tipo === "trimestre"){
+
+    labels = ["T1","T2","T3","T4"];
+
+    valoresActual = [
+        suma(datosActual,0,3),
+        suma(datosActual,3,6),
+        suma(datosActual,6,9),
+        suma(datosActual,9,12)
+    ];
+
+    valoresAnterior = [
+        suma(datosAnterior,0,3),
+        suma(datosAnterior,3,6),
+        suma(datosAnterior,6,9),
+        suma(datosAnterior,9,12)
+    ];
+}
+
+// 🔥 AÑO
+else if(tipo === "anio"){
+
+    labels = ["Total"];
+
+    valoresActual = [
+        datosActual.reduce((a,b)=>a+b,0)
+    ];
+
+    valoresAnterior = [
+        datosAnterior.reduce((a,b)=>a+b,0)
+    ];
+}
+
+    const ctx = document.getElementById("graficaComparativa");
+
+    if(chartComparativa){
+        chartComparativa.destroy();
+    }
+
+    chartComparativa = new Chart(ctx,{
+
+        type:'bar',
+
+        data:{
+            labels,
+
+datasets:[
+{
+    label:añoAnterior,
+    data:valoresAnterior,
+
+    backgroundColor:"rgba(37,99,235,0.85)",
+    hoverBackgroundColor:"#3b82f6",
+
+    borderRadius:8
+},
+{
+    label:añoActual,
+    data:valoresActual,
+
+    backgroundColor:"rgba(109,40,217,0.85)",
+    hoverBackgroundColor:"#7c3aed",
+
+    borderRadius:8
+}
+]
+        },
+
+        options:{
+
+            responsive:true,
+
+            plugins:{
+                legend:{
+                    labels:{
+                        color:"#ffffff"
+                    }
+                }
+            },
+
+            scales:{
+
+                x:{
+                    ticks:{
+                        color:"#ffffff"
+                    },
+                    grid:{
+                        display:false
+                    }
+                },
+
+                y:{
+                    beginAtZero:true,
+
+                    ticks:{
+                        color:"#ffffff",
+                        callback:(v)=> v + " MWh"
+                    },
+
+                    grid:{
+                        color:"rgba(255,255,255,0.05)"
+                    }
+                }
+            }
+        }
+    });
+}
+
+function suma(array,inicio,fin){
+
+    return array
+        .slice(inicio,fin)
+        .reduce((a,b)=>a+b,0);
+}
+
 function loginSolarCRIS(){
 
     const pass = document.getElementById("passwordInput").value;
@@ -2559,6 +2836,7 @@ if(modo !== "admin" && modo !== "normal"){
     await graficaMesActualPropia();
     await graficaMesAnteriorPropia();
     await actualizarBloqueEnergia();
+    await cargarComparativa("mes");
 };
 
 setInterval(tiempoReal,30000);
